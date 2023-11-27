@@ -1,36 +1,28 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## 规则
 
-## Getting Started
+剧集和季的顺序，永远按「发布时间」排序，而不按照「第 n 季/集」（有各种额外的季或集）。
+不再强调「电视剧」概念，以「系列」概念替代，仅仅是用于将多个同系列季在查询时一起查询出来。
+所以每个季的 `name` 都应该是完整有意义的，如「红楼梦 第一季」，虽然红楼梦只有第一季而且不可能有第二季了，但仍然要这样取名。
 
-First, run the development server:
+## 只有一个季的剧，还要有「系列」吗？
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+可以没有
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 问题
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 脱口秀大会
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+在一天内，会有多条剧集记录。此时不能用发布时间匹配
 
-## Learn More
+2022-08-30 集结篇
+2022-08-30 第一期上
+2022-08-31 第一期下
 
-To learn more about Next.js, take a look at the following resources:
+而且「第一期」这种带有顺序的标志，分成了「上」、「下」，所以也不能用来标志唯一性。
+只能直接用名字匹配
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+而且，它还有多个「集结篇」剧集，但是这种番外性质的剧集必须和「季」放在不起，不能单独另外开季，否则会有 n 个「xx 季集结篇」。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+<!-- 那么，番外、彩蛋等，一律从 10001 开始？ -->
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+https://v.qq.com/x/cover/mzc0020016b6v6q/p00443xjkvr.html?ptag=11976

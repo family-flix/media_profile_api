@@ -1,0 +1,151 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model tv_profile {
+  id      String   @id
+  created DateTime @default(now())
+  updated DateTime @default(now())
+
+  // 电视剧名称
+  name              String?
+  // 电视剧原始名称/外文名称
+  original_name     String?
+  // 别名
+  alias             String  @default("")
+  // 描述
+  overview          String?
+  // 海报地址
+  poster_path       String?
+  // 背景图片
+  backdrop_path     String?
+  // 首播日期
+  first_air_date    String?
+  // 原始语言
+  original_language String?
+  // 产地 HK(港剧)、CN(国产剧)、KR(韩剧)、US(美剧)、IN(印度)、JP(日剧)
+  origin_country    String  @default("")
+  // 标签(区分动画，也是用这个字段来区分)
+  genres            String  @default("")
+  // 总集数
+  episode_count     Int     @default(0)
+  // 总季数
+  season_count      Int     @default(0)
+
+  seasons season_profile[]
+
+  @@map("TVProfile")
+}
+
+model season_profile {
+  id      String   @id
+  created DateTime @default(now())
+  updated DateTime @default(now())
+
+  unique_id     String
+  source        Int
+  name          String?
+  overview      String?
+  poster_path   String?
+  air_date      String?
+  season_number Int     @default(0)
+  episode_count Int     @default(0)
+  vote_average  Float   @default(0)
+  in_production Int     @default(0)
+
+  tv_profile_id String?
+  tv_profile    tv_profile? @relation(fields: [tv_profile_id], references: [id])
+
+  episodes episode_profile[]
+  persons  person_in_media[]
+
+  @@map("SeasonProfile")
+}
+
+model episode_profile {
+  id      String   @id
+  created DateTime @default(now())
+  updated DateTime @default(now())
+
+  name           String?
+  overview       String?
+  air_date       String?
+  episode_number Int
+  season_number  Int
+  runtime        Int?
+
+  season_profile_id String?
+  season_profile    season_profile? @relation(fields: [season_profile_id], references: [id])
+
+  @@map("EpisodeProfile")
+}
+
+model movie_profile {
+  id      String   @id
+  created DateTime @default(now())
+  updated DateTime @default(now())
+
+  name              String?
+  original_name     String?
+  alias             String?
+  overview          String?
+  poster_path       String?
+  backdrop_path     String?
+  air_date          String?
+  original_language String?
+  origin_country    String  @default("")
+  genres            String  @default("")
+  runtime           Int?
+
+  persons person_in_media[]
+
+  @@map("MovieProfile")
+}
+
+model person_profile {
+  id      String   @id
+  created DateTime @default(now())
+  updated DateTime @default(now())
+
+  name                 String
+  profile              String  @default("")
+  alias                String?
+  biography            String?
+  profile_path         String?
+  birthday             String?
+  place_of_birth       String?
+  known_for_department String?
+
+  persons_in_media person_in_media[]
+
+  @@map("PersonProfile")
+}
+
+model person_in_media {
+  id      String   @id
+  created DateTime @default(now())
+  updated DateTime @default(now())
+
+  name                 String
+  // 顺序
+  order                Int
+  // 在剧中的职位
+  known_for_department String?
+
+  season_id  String?
+  season     season_profile? @relation(fields: [season_id], references: [id])
+  movie_id   String?
+  movie      movie_profile?  @relation(fields: [movie_id], references: [id])
+  profile_id String
+  profile    person_profile  @relation(fields: [profile_id], references: [id])
+
+  @@map("Person")
+}
