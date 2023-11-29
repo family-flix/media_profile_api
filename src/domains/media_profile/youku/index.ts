@@ -8,16 +8,14 @@ import { Result } from "@/types";
 import { MEDIA_COUNTRY_MAP, MEDIA_GENRES_MAP } from "@/constants";
 
 import {
-  fetch_episode_profile,
-  fetch_season_profile,
   fetch_tv_profile_in_youku,
   fetch_movie_profile,
   search_media_in_youku,
   search_movie_in_tmdb,
+  update_cookie,
   request,
   YoukuProfilePageInfo,
   YoukuSeasonProfileResp,
-  update_cookie,
   YoukuEpisodeProfileResp,
 } from "./services";
 import { format_season_profile, get_sign, update_token } from "./utils";
@@ -125,10 +123,30 @@ export class YoukuClient {
   }
 
   async fetch_profile_page(url: string) {
-    const r = await request.get<string>(url);
-    if (r.error) {
-      return Result.Err(r.error.message);
-    }
+    // const r = await request.get<string>(url);
+    const r = await axios.get(url, {
+      headers: {
+        authority: "v.youku.com",
+        accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
+        "cache-control": "max-age=0",
+        cookie:
+          "P_F=1; cna=TyNmHYeaUmcCAXPuK4Jgz6e+; __ysuid=1701224362654Hkg; __ayft=1701224362655; __aysid=1701224362655Orn; __ayscnt=1; isI18n=false; xlly_s=1; _m_h5_tk=e2405f6e418492cff3bc30dcee692046_1701260938677; _m_h5_tk_enc=6f3bd37dff0c177d468e2f91ad96cdde; __arycid=dd-3-00; __arcms=dd-3-00; x5sec=7b22617365727665722d686579693b32223a223334393163386532373239356163383564303433373632646332396165666234434d43346e4b7347454a573278386b434d494b42384d37342f2f2f2f2f77464141773d3d222c22733b32223a2234393335656535666334373639616564227d; __arpvid=1701256260996GQqQbx-1701256261031; __aypstp=17; __ayspstp=17; __ayvstp=33; __aysvstp=33; l=fBLaaDX7NtjJgH0oBOfaPurza779QIRvjuPzaNbMi9fPtM5y5u0AW1EuS0L2CnGVFsawR3zzwi5HBeYBchbYXeQ2zvbLmoDmnmOk-Wf..; tfstk=drtWSswC7BKqWF_L40M21yagv_sCVQiN9J6pIpEzpgI8JE9yizSPUpCBOI508bfyYBNdMQtEZkvnRovycpkR9p0LO9tme4eJpJ6pgIdC-YfF96OepUkqbcJkEMjpOfoZbLC5xMpSIy2BELjhv-PK7EpuACQvHGwt4S0qsLlbmorCtrYB87Kpbn65kqJRMy5XcT_56LdUvO7Yb1GhXywfSk6f_xMb-ybhcjKP.; isg=BMzMkDYdxXg-MNATepzqD_iInSz-BXCveZsVHyaNyncasWy7ThVAPggLUbmJ0qgH",
+        referer:
+          "https://v.youku.com//v_show/id_1530521967.html/_____tmd_____/punish?x5secdata=xcQoEfkuEl8Bb1q2Y2I0MrLbjrtHiWbgzsGqHvh4HugBMWadRTkexu0RjlpXwcHeQgA51jEp7%2fjyHV6PzHmD6JBlakBIuJK1y%2bX7Q6CvL4tVubPfW0TIegLgCU3YrwMR9yeKQixA%2fiUxDZNnelTbC0kj%2fGqZ%2fo0TXQgIdoTXApJ9bYOchXeMnGWp6gb5jU75d0yvd%2bIqrub0sjvtF69jaw80P4gKb9tuGLlu38OxaRf9I%3d__bx__v.youku.com%2fv_show%2fid_1530521967.html&x5step=1",
+        "sec-ch-ua": '"Google Chrome";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"macOS"',
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-user": "?1",
+        "upgrade-insecure-requests": "1",
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+      },
+    });
     const data = r.data;
     const json_r = /window.__INITIAL_DATA__ =([^;]{1,});/;
     const json: YoukuProfilePageInfo | null = (() => {
@@ -213,6 +231,7 @@ export class YoukuClient {
   }
 
   async fetch_profile_with_seasons(u: string) {
+    await this.initialize();
     const profile_r = await this.fetch_profile_page(u);
     if (profile_r.error) {
       return Result.Err(profile_r.error.message);
@@ -313,8 +332,15 @@ export class YoukuClient {
       return Result.Err(r.data.ret[0]);
     }
     const p1 = r.data.data["2019030100"].data;
-    const { stageTabs } = p1.data;
+    const { stageTabs, lastStage } = p1.data;
+    // console.log("p1.data", p1.data);
     const range = (() => {
+      if (lastStage) {
+        return [1, lastStage];
+      }
+      if (!stageTabs) {
+        return null;
+      }
       const first = stageTabs[0];
       const last = stageTabs[stageTabs.length - 1];
       return [first.itemStartStage, last.itemEndStage];
@@ -351,9 +377,12 @@ export class YoukuClient {
             lastSubIndex: 20,
             level: 2,
             lifecycle: 1,
-            itemStartStage: range[0],
-            itemEndStage: range[1],
-            pageId: "PCSHOW_VARIETY_NORMAL",
+            itemStartStage: range?.[0],
+            itemEndStage: range?.[1],
+            // itemStartStage: 36,
+            // itemEndStage: 70,
+            // pageId: "PCSHOW_VARIETY_NORMAL",
+            pageId: "PCSHOW_ANIME_NORMAL",
             pageName: "page_playpage",
             scmA: "20140719",
             scmB: "manual",
@@ -389,12 +418,15 @@ export class YoukuClient {
     if (!latest_episode) {
       return Result.Err("没有获取到剧集");
     }
+    // console.log(p2.nodes);
     const r3 = await this.fetch_episode_profile_api(latest_episode.data.action.value, season_id);
     if (r3.error) {
       return Result.Err(r3.error.message);
     }
     const p3 = r3.data;
+    // console.log(p3);
     const TYPE_MAP: Record<string, string> = {
+      电影: "movie",
       综艺: "season",
     };
     const base_node = p3.nodes.find((n) => n.type === 10001);
@@ -407,7 +439,7 @@ export class YoukuClient {
       overview: null as null | string,
       poster_path: p3.data.extra.showImgV,
       air_date: dayjs(p3.data.extra.showReleaseTime).format("YYYY-MM-DD"),
-      genres: [p3.data.extra.showCategory].map((n) => MEDIA_GENRES_MAP[n]),
+      genres: [p3.data.extra.showCategory].map((n) => MEDIA_GENRES_MAP[n]).filter(Boolean),
       origin_country: [] as string[],
       persons: [] as {
         id: string;
@@ -463,22 +495,24 @@ export class YoukuClient {
     })();
     const episodes = p2.nodes.map((node, i) => {
       const { action, stage, title, img } = node.data;
-      console.log(node.data);
       return {
-        id: action.value,
+        id: action?.value || node.id,
         name: title,
         thumbnail: img,
-        episode_number: i + 1,
-        air_date: String(stage).replace(/([0-9]{4})([0-9]{2})([0-9]{2})/, "$1-$2-$3"),
+        episode_number: stage || i + 1,
+        air_date: String(stage).match(/[0-9]{8}/)
+          ? String(stage).replace(/([0-9]{4})([0-9]{2})([0-9]{2})/, "$1-$2-$3")
+          : null,
       };
     });
     return Result.Ok({
-      // type: TYPE_MAP[profile.data.extra.showCategory] || "season",
+      type: TYPE_MAP[p3.data.extra.videoCategory] || "season",
       id: payload.id,
       name: payload.name,
       overview: payload.overview,
       poster_path: payload.poster_path,
-      air_date: episodes[0]?.air_date ?? null,
+      air_date: payload.air_date,
+      // air_date: episodes[0]?.air_date ?? null,
       backdrop_path: null,
       original_name: null,
       episodes,

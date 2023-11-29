@@ -1,6 +1,5 @@
 "use client";
 
-import { Button, Input } from "antd";
 import { useState } from "react";
 
 export default function Home() {
@@ -54,7 +53,7 @@ export default function Home() {
         <div className="flex justify-center mt-4">
           <div className="flex space-x-4 p-8">
             <div>
-              <Input
+              <input
                 value={url}
                 placeholder="请输入要抓取的影视剧播放页地址"
                 onChange={(event) => {
@@ -63,7 +62,7 @@ export default function Home() {
               />
             </div>
             <div>
-              <Button
+              <button
                 onClick={async () => {
                   setValues(null);
                   setCurSeason(null);
@@ -108,10 +107,9 @@ export default function Home() {
                     }
                   }
                 }}
-                type="primary"
               >
-                搜索
-              </Button>
+                抓取
+              </button>
             </div>
           </div>
         </div>
@@ -127,31 +125,42 @@ export default function Home() {
             }
             const { name, overview, poster_path, air_date, origin_country, genres, persons } = profile;
             return (
-              <div className="flex">
-                <div className="mr-4">
-                  <img className="w-[180px]" src={poster_path} alt={name} />
-                </div>
-                <div className="flex-1">
-                  <div className="text-2xl">{name}</div>
-                  <div className="">{overview}</div>
-                  <div className="mt-4">
-                    {air_date} {origin_country.map((t) => t).join("、")}
+              <div>
+                <div className="flex">
+                  <div className="mr-4">
+                    <img className="w-[180px]" src={poster_path} alt={name} />
                   </div>
-                  <div className="mt-2 flex gap-3">
-                    {genres.map((g) => {
-                      return <div key={g}>{g}</div>;
-                    })}
-                  </div>
-                  <div className="flex flex-wrap gap-3 mt-4">
-                    {persons.map((person) => {
-                      const { name, avatar } = person;
-                      return (
-                        <div key={name}>
-                          <img className="w-[40px] h-[40px] object-cover rounded-full" src={avatar} alt={name} />
-                          <div className="break-all text-center">{name}</div>
-                        </div>
-                      );
-                    })}
+                  <div className="flex-1">
+                    <div className="text-2xl">{name}</div>
+                    <div className="">{overview}</div>
+                    <div className="mt-4">
+                      {air_date} {origin_country.map((t) => t).join("、")}
+                    </div>
+                    <div className="mt-2 flex gap-3">
+                      {genres.map((g) => {
+                        return <div key={g}>{g}</div>;
+                      })}
+                    </div>
+                    <div className="flex flex-wrap gap-3 mt-4">
+                      {persons.map((person) => {
+                        const { name, avatar } = person;
+                        return (
+                          <div key={name}>
+                            <img className="w-[40px] h-[40px] object-cover rounded-full" src={avatar} alt={name} />
+                            <div className="break-all text-center">{name}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-8">
+                      <button
+                        onClick={() => {
+                          console.log(JSON.stringify(profile, null, 2));
+                        }}
+                      >
+                        打印
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -245,19 +254,19 @@ export default function Home() {
                         })}
                       </div>
                       <div className="mt-8">
-                        <Button
-                          type="primary"
+                        <button
                           onClick={async () => {
-                            const r = await fetch("/api/v1/create_season", {
-                              body: JSON.stringify(curSeason),
-                              method: "POST",
-                            });
-                            const r1 = await r.json();
-                            console.log(r1);
+                            console.log(JSON.stringify(curSeason, null, 2));
+                            // const r = await fetch("/api/v1/create_season", {
+                            //   body: JSON.stringify(curSeason),
+                            //   method: "POST",
+                            // });
+                            // const r1 = await r.json();
+                            // console.log(r1);
                           }}
                         >
-                          保存
-                        </Button>
+                          打印
+                        </button>
                       </div>
                     </div>
                   );

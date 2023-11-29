@@ -21,6 +21,7 @@ export function get_sign(body: { t: number; d: string }) {
 
 export function format_season_profile(profile: YoukuProfilePageInfo["data"]["data"]) {
   const TYPE_MAP: Record<string, string> = {
+    电影: "movie",
     综艺: "season",
   };
   const base_node = profile.nodes.find((n) => n.type === 10001);
@@ -128,7 +129,7 @@ export function format_season_profile(profile: YoukuProfilePageInfo["data"]["dat
     });
   })();
   return {
-    type: TYPE_MAP[profile.data.extra.showCategory] || "season",
+    type: TYPE_MAP[profile.data.extra.videoCategory] || "season",
     id: payload.id,
     name: payload.name,
     overview: payload.overview,

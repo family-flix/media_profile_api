@@ -24,6 +24,7 @@ export class QQVideoClient {
       token,
     };
   }
+
   /** 根据关键字搜索电视剧 */
   async search(keyword: string) {
     return search_media_in_qq(keyword, {});
