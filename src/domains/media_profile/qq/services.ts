@@ -1,13 +1,8 @@
 /**
- * @file 豆瓣 api
- * @doc https://m.mgtv.com/h/458367/16949844.html
+ * @file 腾讯视频
  */
-// import fs from "fs";
-// import path from "path";
 
 import axios from "axios";
-import dayjs from "dayjs";
-import cheerio from "cheerio";
 
 import { Result, Unpacked, UnpackedResult } from "@/types";
 import { MediaId, SearchedTVItem, SeasonProfile, TVProfile } from "../types";
@@ -15,7 +10,6 @@ import { MEDIA_COUNTRY_MAP, MEDIA_SOURCE_MAP, MEDIA_TYPE_MAP } from "@/constants
 
 export type Language = "zh-CN" | "en-US";
 export type RequestCommonPart = {
-  /** tmdb api key */
   api_key?: string;
 };
 

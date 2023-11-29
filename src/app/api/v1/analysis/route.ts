@@ -30,10 +30,23 @@ export async function GET(req: NextRequest) {
     return Response.json({
       code: 0,
       msg: "",
-      data: {
-        platform: "iqiyi",
-        ...r.data,
-      },
+      data: r.data,
+    });
+  }
+  if (u.startsWith("https://v.youku.com/")) {
+    const client = new YoukuClient({});
+    const r = await client.fetch_profile_with_seasons(u);
+    if (r.error) {
+      return Response.json({
+        code: 1002,
+        msg: r.error.message,
+        data: null,
+      });
+    }
+    return Response.json({
+      code: 0,
+      msg: "",
+      data: r.data,
     });
   }
   //   const client1 = new MGTVClient({});

@@ -33,6 +33,22 @@ export async function GET(req: NextRequest) {
       data: r.data,
     });
   }
+  if (platform === "youku") {
+    const client = new YoukuClient({});
+    const r = await client.fetch_season_profile(u);
+    if (r.error) {
+      return Response.json({
+        code: 1002,
+        msg: r.error.message,
+        data: null,
+      });
+    }
+    return Response.json({
+      code: 0,
+      msg: "",
+      data: r.data,
+    });
+  }
   return Response.json({
     code: 1001,
     msg: "未知的 platform",

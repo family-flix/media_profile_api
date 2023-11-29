@@ -1,21 +1,23 @@
 /**
  * @file 爱奇艺
  */
+import dayjs from "dayjs";
+
 import { Result, Unpacked } from "@/types";
 import { MEDIA_COUNTRY_MAP, MEDIA_GENRES_MAP } from "@/constants";
 
 import {
-  fetch_episode_profile,
+  fetch_episode_profile_in_iqiyi,
   fetch_tv_profile_in_iqiyi,
-  fetch_movie_profile,
+  fetch_movie_profile_in_iqiyi,
   search_media_in_iqiyi,
-  search_movie_in_tmdb,
-  request,
+  search_movie_in_iqiyi,
+  iqiyi_request,
   IQiyiProfilePageInfo,
   IQiyiProfileBaseInfo,
   IQiyiEpisodeResp,
 } from "./services";
-import { format_people, build_iqiyi_query } from "./utils";
+import { format_people, build_iqiyi_query, format_poster_path } from "./utils";
 
 export class IQiyiClient {
   options: {
@@ -26,7 +28,7 @@ export class IQiyiClient {
   }
 
   async fetch_profile_page(url: string) {
-    const r = await request.get<string>(url);
+    const r = await iqiyi_request.get<string>(url);
     if (r.error) {
       return Result.Err(r.error.message);
     }
@@ -53,7 +55,7 @@ export class IQiyiClient {
     const query = build_iqiyi_query({
       entity_id: id,
     });
-    const season_res = await request.get<{
+    const season_res = await iqiyi_request.get<{
       data: IQiyiProfileBaseInfo;
     }>("https://mesh.if.iqiyi.com/tvg/pcw/base_info", query);
     if (season_res.error) {
@@ -138,55 +140,80 @@ export class IQiyiClient {
    * 获取详情 + 季列表
    */
   async fetch_profile_with_seasons(url: string) {
-    const json_r = await this.fetch_profile_page(url);
-    if (json_r.error) {
-      return Result.Err(json_r.error.message);
+    const profile_r = await this.fetch_profile_page(url);
+    if (profile_r.error) {
+      return Result.Err(profile_r.error.message);
     }
-    const json = json_r.data;
-    const s_r = await this.fetch_base_info(json.tvId);
-    if (s_r.error) {
-      return Result.Err(s_r.error.message);
+    const profile = profile_r.data;
+    const base_r = await this.fetch_base_info(profile.tvId);
+    if (base_r.error) {
+      return Result.Err(base_r.error.message);
     }
-    const season_data = s_r.data;
-    const profile = json;
+    const base = base_r.data;
+    const TYPE_MAP: Record<number, string> = {
+      1: "movie",
+      2: "season",
+    };
     return Result.Ok({
-      id: season_data._id,
-      name: season_data.title,
-      overview: season_data.desc,
-      poster_path: season_data.image_url,
+      platform: "iqiyi",
+      type: TYPE_MAP[profile.channelId] || "season",
+      id: base._id,
+      name: base.title,
+      overview: base.desc,
+      poster_path: format_poster_path(base.image_url).s4,
       backdrop_path: null,
       original_name: null,
-      seasons: season_data.seasons.map((s) => {
-        if (s.id !== season_data._id) {
-          return {
-            ...s,
-            genres: [],
-            origin_country: [],
-            persons: [],
-          };
+      seasons: (() => {
+        if (base.seasons.length == 0 && profile.channelId === 1) {
+          return [
+            {
+              id: base._id,
+              name: base.title,
+              overview: base.desc,
+              poster_path: format_poster_path(base.image_url).s4,
+              air_date: dayjs(base.publish_date).format("YYYY-MM-DD"),
+              genres: profile.categories
+                .filter((c) => c.subType === 2)
+                .map((t) => MEDIA_GENRES_MAP[t.name])
+                .filter(Boolean),
+              origin_country: profile.categories
+                .filter((c) => [1, 0].includes(c.subType))
+                .map((t) => MEDIA_COUNTRY_MAP[t.name])
+                .filter(Boolean),
+              persons: format_people(profile.people),
+            },
+          ];
         }
-        const latest_episode = s.episodes[s.episodes.length - 1];
-        return {
-          ...s,
-          name: season_data.title,
-          overview: season_data.desc,
-          poster_path: season_data.image_url,
-          genres: profile.categories
-            .filter((c) => c.subType === 2)
-            .map((t) => MEDIA_GENRES_MAP[t.name])
-            .filter(Boolean),
-          origin_country: profile.categories
-            .filter((c) => c.subType === 1)
-            .map((t) => MEDIA_COUNTRY_MAP[t.name])
-            .filter(Boolean),
-          persons: format_people(profile.people),
-          air_date: latest_episode ? latest_episode.air_date : null,
-        };
-      }),
-      air_date: null,
-      vote_average: 0,
-      popularity: 0,
-      number_of_seasons: season_data.seasons.length,
+        return base.seasons.map((season) => {
+          if (season.id !== base._id) {
+            return {
+              ...season,
+              genres: [],
+              origin_country: [],
+              persons: [],
+            };
+          }
+          const latest_episode = season.episodes[season.episodes.length - 1];
+          return {
+            ...season,
+            name: base.title,
+            overview: base.desc,
+            poster_path: format_poster_path(base.image_url).s4,
+            genres: profile.categories
+              .filter((c) => c.subType === 2)
+              .map((t) => MEDIA_GENRES_MAP[t.name])
+              .filter(Boolean),
+            origin_country: profile.categories
+              .filter((c) => c.subType === 1)
+              .map((t) => MEDIA_COUNTRY_MAP[t.name])
+              .filter(Boolean),
+            persons: format_people(profile.people),
+            air_date: latest_episode?.air_date
+              ? latest_episode.air_date.replace(/([0-9]{4})([0-9]{2})([0-9]{2})/, "$1-$2-$3")
+              : null,
+          };
+        });
+      })(),
     });
   }
 
@@ -217,7 +244,7 @@ export class IQiyiClient {
     const query = build_iqiyi_query({
       album_id: season_id,
     });
-    const episodes_r = await request.get<IQiyiEpisodeResp>("https://mesh.if.iqiyi.com/tvg/v2/selector", query);
+    const episodes_r = await iqiyi_request.get<IQiyiEpisodeResp>("https://mesh.if.iqiyi.com/tvg/v2/selector", query);
     if (episodes_r.error) {
       console.log("/tvg/v2/selector failed", episodes_r.error.message);
       return Result.Err(episodes_r.error.message);
@@ -279,7 +306,7 @@ export class IQiyiClient {
       id: season_data._id,
       name: season_data.title,
       overview: season_data.desc,
-      poster_path: season_data.image_url,
+      poster_path: format_poster_path(season_data.image_url).s4,
       air_date: latest_episode.air_date,
       episode_count: season_data.total_episode,
       episodes,
@@ -316,7 +343,7 @@ export class IQiyiClient {
   }) {
     const { token } = this.options;
     const { tv_id, season_number, episode_number } = body;
-    const result = await fetch_episode_profile(
+    const result = await fetch_episode_profile_in_iqiyi(
       {
         tv_id,
         season_number,
@@ -332,7 +359,7 @@ export class IQiyiClient {
   async search_movie(keyword: string, extra: Partial<{ page: number; language: "zh-CN" | "en-US" }> = {}) {
     const { token } = this.options;
     const { page } = extra;
-    return search_movie_in_tmdb(keyword, {
+    return search_movie_in_iqiyi(keyword, {
       page,
       api_key: token,
     });
@@ -340,7 +367,7 @@ export class IQiyiClient {
   /** 获取电视剧详情 */
   async fetch_movie_profile(id: number | string) {
     const { token } = this.options;
-    const result = await fetch_movie_profile(Number(id), {
+    const result = await fetch_movie_profile_in_iqiyi(Number(id), {
       api_key: token,
     });
     return result;

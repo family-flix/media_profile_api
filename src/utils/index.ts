@@ -29,15 +29,8 @@ export function padding_zero(str: number | string) {
   }
   return s;
 }
-export function remove_str(
-  filename: string,
-  index: number = 0,
-  length: number,
-  placeholder: string = ""
-) {
-  return (
-    filename.slice(0, index) + placeholder + filename.slice(index + length)
-  );
+export function remove_str(filename: string, index: number = 0, length: number, placeholder: string = "") {
+  return filename.slice(0, index) + placeholder + filename.slice(index + length);
 }
 
 /**
@@ -66,15 +59,7 @@ export function generate_new_video_filename(
   }>
 ) {
   let result = [];
-  const {
-    name,
-    original_name,
-    firstAirDate,
-    season,
-    episode = "",
-    episodeName = "",
-    resolution,
-  } = params;
+  const { name, original_name, firstAirDate, season, episode = "", episodeName = "", resolution } = params;
   if (name) {
     result.push(`[${name}]`);
   }
@@ -199,21 +184,18 @@ export function is_video_file(filename: string) {
   return video_file_type_regexp.test(filename);
 }
 
-export function query_stringify(
-  query: Record<string, string | number | undefined | null>
-) {
+export function query_stringify(query: Record<string, string | number | undefined | null>) {
   return Object.keys(query)
     .filter((key) => {
       return query[key] !== undefined && query[key] !== null;
     })
     .map((key) => {
-      return `${key}=${encodeURIComponent(query[key]!)}`;
+      return `${key}=${encodeURIComponent(query[key] || "")}`;
     })
     .join("&");
 }
 
-const defaultRandomAlphabet =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const defaultRandomAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 /** 返回一条随机作为记录 id 的 15 位字符串 */
 export function r_id() {
   return random_string(15);
@@ -330,9 +312,7 @@ export function sleep(delay: number = 1000) {
 }
 
 /** 解析一段 json 字符串 */
-export function parseJSONStr<T extends JSONObject | JSONArray>(
-  json: string | null
-) {
+export function parseJSONStr<T extends JSONObject | JSONArray>(json: string | null) {
   if (!json) {
     return Result.Err("不是合法的 json");
   }

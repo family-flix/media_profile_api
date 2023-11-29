@@ -12,12 +12,10 @@ import { SearchedTVItem } from "../types";
 
 export type Language = "zh-CN" | "en-US";
 export type RequestCommonPart = {
-  /** tmdb api key */
   api_key?: string;
 };
 
 const client = axios.create({
-  // baseURL: API_HOST,
   timeout: 6000,
 });
 type RequestClient = {

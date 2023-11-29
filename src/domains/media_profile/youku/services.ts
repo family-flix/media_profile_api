@@ -2,67 +2,53 @@
  * @file 优酷 搜索
  */
 import axios from "axios";
-import dayjs from "dayjs";
 import cheerio from "cheerio";
 
 import { Result, Unpacked, UnpackedResult } from "@/types";
-import { query_stringify } from "@/utils";
+import { MEDIA_SOURCE_MAP, MEDIA_TYPE_MAP, MEDIA_COUNTRY_MAP } from "@/constants";
 import { parse_filename_for_video } from "@/utils/parse_filename_for_video";
+import { query_stringify } from "@/utils";
 
 import { SearchedTVItem } from "../types";
-import { MEDIA_SOURCE_MAP, MEDIA_TYPE_MAP, MEDIA_COUNTRY_MAP } from "@/constants";
 
-const YOUKU_ORIGIN_COUNTRY_MAP: Record<string, string> = {
-  中国: "CN",
-  韩国: "KR",
-};
 export type Language = "zh-CN" | "en-US";
-export type YoukuRequestCommonPart = {
-  /** tmdb api key */
+export type RequestCommonPart = {
   api_key?: string;
 };
-function fix_TMDB_image_path({
-  backdrop_path,
-  poster_path,
-}: Partial<{
-  backdrop_path: null | string;
-  poster_path: string | null;
-}>) {
-  const result: {
-    backdrop_path: string | null;
-    poster_path: string | null;
-  } = {
-    backdrop_path: null,
-    poster_path: null,
-  };
-  if (backdrop_path) {
-    result.backdrop_path = `https://proxy.funzm.com/api/tmdb_site/t/p/w1920_and_h800_multi_faces${backdrop_path}`;
-  }
-  if (poster_path) {
-    result.poster_path = `https://proxy.funzm.com/api/tmdb_image/t/p/w600_and_h900_bestv2${poster_path}`;
-  }
-  return result;
+let cookie = "";
+export function update_cookie(c: string) {
+  cookie = c;
 }
-
 const client = axios.create({
-  // baseURL: API_HOST,
   timeout: 6000,
 });
 type RequestClient = {
   get: <T>(url: string, query?: Record<string, string | number | undefined>) => Promise<Result<T>>;
   post: <T>(url: string, body: Record<string, string | number | undefined>) => Promise<Result<T>>;
 };
-const request: RequestClient = {
-  get: async <T extends null>(endpoint: string, query?: Record<string, string | number | undefined>) => {
+export const request: RequestClient = {
+  get: async <T extends null>(endpoint: string, query: Record<string, string | number | undefined> = {}) => {
     try {
-      // const url = `${endpoint}${query ? "?" + query_stringify(query) : ""}`;
       const url = endpoint;
-      // console.log("[LOG](request)", "get", API_HOST + url);
-      const resp = await client.get(url, {
+      let u = url;
+      const resp = await axios.get(u, {
         params: query,
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 16_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.43(0x18002b2c) NetType/WIFI Language/zh_CN",
+          authority: "v.youku.com",
+          accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+          "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
+          cookie,
+          "sec-ch-ua": '"Google Chrome";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": '"macOS"',
+          "sec-fetch-dest": "document",
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-site": "none",
+          "sec-fetch-user": "?1",
+          "upgrade-insecure-requests": "1",
+          "user-agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
         },
       });
       return Result.Ok<T>(resp.data);
@@ -85,22 +71,1043 @@ const request: RequestClient = {
   },
 };
 
-/**
- * tv 列表中的元素
- */
-export type PartialSearchedTV = Omit<
-  TVProfileItemInYouku,
-  "id" | "search_tv_in_tmdb_then_save" | "original_country"
-> & {
-  id: string;
-  created: string;
-  updated: string;
+export type YoukuProfilePageInfo = {
+  config: {
+    main: Record<
+      number,
+      {
+        key: string;
+        channelName: string;
+        name: string;
+        playlistCateID: number;
+        channelurl: string;
+      }
+    >;
+    simpleMode: boolean;
+    environment: string;
+    isTudou: boolean;
+    origin: string;
+    url: string;
+    componentMap: {
+      focus: {
+        key: string;
+        value: number;
+        name: string;
+        medusaKey: string;
+      };
+      focus2: {
+        key: string;
+        value: number;
+        name: string;
+        medusaKey: string;
+      };
+      typeConf: {
+        playlistAuthor: number;
+        scgLongVideo: number;
+        series: number;
+      };
+      listView: {
+        key: string;
+        value: number;
+        name: string;
+      }[];
+      topManu: {
+        体育: {
+          tags: {
+            key: string;
+            value: number[];
+            name: string;
+          }[];
+        };
+        default: {
+          scg: {
+            key: string;
+            value: number[];
+            name: string;
+            medusaKey: string;
+          };
+          playlist: {
+            key: string;
+            value: number[];
+            name: string;
+            medusaKey: string;
+          };
+          single: {
+            key: string;
+            value: number[];
+            name: string;
+          };
+          show: {
+            key: string;
+            value: number;
+            name: string;
+            medusaKey: string;
+          };
+        };
+        电视剧: {
+          tags: {
+            key: string;
+            value: number;
+            name: string;
+            medusaKey: string;
+          }[];
+        };
+        动漫: {
+          tags: {
+            key: string;
+            value: number;
+            name: string;
+            medusaKey: string;
+          }[];
+        };
+        电影: {
+          tags: {
+            key: string;
+            value: number[];
+            name: string;
+            medusaKey: string;
+          }[];
+        };
+        综艺: {
+          tags: {
+            key: string;
+            value: string;
+            name: string;
+            medusaKey: string;
+          }[];
+        };
+      };
+      key: string;
+      btmapping: {
+        BohVideoInfo: number;
+        BohStar: number;
+        BohAlbum: number;
+        BohSurroundings: number;
+        BohRecommend: number;
+        BohComment: number;
+        BohAdvert: number;
+      };
+      top: {
+        ad: number;
+        detail: number;
+        anthology: number;
+        segments: number;
+        focus: number;
+        playlist: number;
+        single: number;
+        score: number;
+        series: number;
+        playback: number;
+      };
+    };
+    query: {
+      spm: string;
+      scm: string;
+    };
+    source: {
+      serverJS: {
+        url: string;
+        urlI18n: string;
+        oldurl: string;
+      };
+      jslibSDK: {
+        url: string;
+      };
+      playerSDK: {
+        url: string;
+      };
+      playerCore: {
+        url: string;
+      };
+      baxiaSDK: {
+        url: string;
+      };
+      xDeviceSDK: {
+        url: string;
+      };
+      xDecoderSDK: {
+        url: string;
+      };
+      padPlayerSDK: {
+        url: string;
+      };
+      adProductH5sdk: {
+        url: string;
+      };
+      vipPaySDK: {
+        url: string;
+      };
+      pageRuntimeSDK: {
+        url: string;
+        urlI18n: string;
+        oldurl: string;
+      };
+      pageChunkSDK: {
+        url: string;
+        urlI18n: string;
+        oldurl: string;
+      };
+      pageChunkCss: {
+        url: string;
+        urlI18n: string;
+        oldurl: string;
+      };
+      pageADSDK: {
+        url: string;
+      };
+      previewPlaySDK: {
+        url: string;
+      };
+      barrageCss: {
+        url: string;
+      };
+      barrageSDK: {
+        url: string;
+      };
+    };
+    renderType: string;
+    ip: string;
+    cna: string;
+    device: string;
+    env: string;
+    staticConf: {
+      isSSR: boolean;
+      offlineMode: boolean;
+      downloadMode: boolean;
+      serverJS: string;
+      jslibSDK: string;
+      playerSDK: string;
+      playerCore: string;
+      padPlayerSDK: string;
+      adProductH5sdk: string;
+      vipPaySDK: string;
+      pageRuntimeSDK: string;
+      pageChunkSDK: string;
+      pageChunkCss: string;
+      pageADSDK: string;
+      previewPlaySDK: string;
+      barrageCss: string;
+      barrageSDK: string;
+    };
+    isOpenClientCDNPriming: boolean;
+    isSimulateMTOPError: boolean;
+    clientIsJump404: boolean;
+    biz: string;
+    serverUserId: string;
+    offlineMode: boolean;
+    downloadMode: boolean;
+    politicsHandleLevel: number;
+    playerConfig: {
+      loginPlay: boolean;
+      vid: string;
+    };
+    IKUVersion: string;
+    sidebarSwitchWidth: number;
+    isExpScope: boolean;
+    isNewVersion: boolean;
+  };
+  data: {
+    success: boolean;
+    msCode: string;
+    errorCode: null;
+    errorMsg: null;
+    data: {
+      id: number;
+      level: number;
+      type: number;
+      typeName: string;
+      more: boolean;
+      traceId: string;
+      style: null;
+      render: null;
+      data: {
+        title: string;
+        session: string;
+        extra: {
+          videoId: string;
+          videoLongId: number;
+          videoCategoryId: number;
+          videoCategory: string;
+          videoType: string;
+          videoTypeCode: null;
+          videoImg: string;
+          videoImgV: string;
+          showVideoStage: number;
+          videoPublishTime: string;
+          videoTitle: string;
+          showVideoStageDesc: string;
+          showId: string;
+          showLongId: number;
+          showCategoryId: number;
+          showCategory: string;
+          episodeTotal: number;
+          showName: string;
+          showSubtitle: string;
+          completed: boolean;
+          showImg: string;
+          showImgV: string;
+          episodeLast: number;
+          showReleaseTime: string;
+          episodeFinalStage: number;
+          playlistId: null;
+          playlistLongId: null;
+          playlistTitle: null;
+          scgId: null;
+          userId: null;
+          allowComment: boolean;
+          allowShare: boolean;
+          allowDownload: boolean;
+          allowLike: boolean;
+          isFavorite: boolean;
+          reportUrl: string;
+          pageKey: string;
+          prePaid: null;
+          paid: number;
+          duration: number;
+          totalComment: number;
+          totalUp: number;
+          verticalStyle: null;
+          isNewReservation: boolean;
+          politicsSensitive: null;
+          interactiveChapter: null;
+          playingType: null;
+          isTracking: boolean;
+          isPugv: boolean;
+          adRestricted: number;
+          autoPay: boolean;
+          albumId: null;
+          microVideoSchema: null;
+          videoRiskMark: null;
+          audiolang: unknown[];
+          videoSizes: null;
+          downloadStatus: unknown[];
+          videoKind: null;
+          subCategories: null;
+          hasVideoType: null;
+          animeEdition: null;
+          videoCacheConfig: {
+            resourceId: string;
+            downloadStatus: string;
+            toastText: string;
+            buttonDesc: string;
+            isVipUser: null;
+            icon: {
+              imgUrl: null;
+              text: null;
+              bgColor: null;
+            };
+          };
+          showPackageType: null;
+          videoPackageType: null;
+          showLibraryTag: number[];
+          videoLibraryTag: number[];
+          streamTypes: string[];
+          safetyContentElement: null;
+        };
+      };
+      nodes: {
+        id: number;
+        /** 第一层级 */
+        level: number;
+        type: number;
+        typeName: string;
+        more: boolean;
+        traceId: string;
+        style: null;
+        render: null;
+        data: {
+          session: string;
+        };
+        nodes: {
+          id: number;
+          /** 第二层级 */
+          level: number;
+          type: number;
+          typeName: string;
+          more: boolean;
+          traceId: string;
+          style: null;
+          render: null;
+          data: {
+            session: string;
+            subtitle: string;
+            allowPlay: number;
+            action: {
+              type: string;
+              value: null;
+              contentType: null;
+              contentValue: null;
+              reportDisabled: boolean;
+              extra: null;
+              callback: null;
+              reportConfig: null;
+              report: {
+                pageName: string;
+                arg1: string;
+                spmAB: string;
+                spmC: string;
+                spmD: string;
+                scmAB: string;
+                scmC: string;
+                scmD: string;
+                index: number;
+                reportDataOpt: boolean;
+                trackInfo: {
+                  component_id: string;
+                  pvv_vid: string;
+                  component_instance_id: number;
+                  utdid: string;
+                  servertime: number;
+                  pageid: string;
+                  lifecycle: number;
+                  drawerid: string;
+                  pvv_sid: string;
+                  cms_req_id: string;
+                };
+                utParam: null;
+              };
+            };
+            allowRefresh: number;
+            title: string;
+            /** 季列表 */
+            series: {
+              title: string;
+              showId: string;
+              showLongId: number;
+              lastEpisodeVideoId: string;
+              current: boolean;
+            }[];
+          };
+          nodes: {
+            id: number;
+            /** 第三层级 */
+            level: number;
+            type: number;
+            typeName: string;
+            more: boolean;
+            traceId: string;
+            style: null;
+            render: null;
+            data: {
+              heat: number;
+              updateInfo: string;
+              showImgV: string;
+              introTitle: string;
+              mark: {
+                type: string;
+                data: {
+                  text: string;
+                  color: string;
+                  iconfont: null;
+                  colorValue: null;
+                  img: null;
+                  img2: null;
+                  ratio: null;
+                  imgList: null;
+                };
+              };
+              introSubTitle: string;
+              desc: string;
+              personId: number;
+              title: string;
+              subtitle: string;
+              stage: number;
+              summary: string;
+              img: string;
+            };
+            nodes: null;
+            layout: null;
+            header: null;
+            contentId: null;
+            raxConfig: null;
+            config: null;
+          }[];
+          layout: null;
+          header: null;
+          contentId: null;
+          raxConfig: null;
+          config: null;
+        }[];
+        layout: null;
+        header: null;
+        contentId: null;
+        raxConfig: null;
+        config: null;
+      }[];
+      layout: null;
+      header: null;
+      contentId: null;
+      raxConfig: null;
+      config: null;
+    };
+    debugInfo: null;
+    headers: {
+      stat_req_episode: string;
+      manufacturingDate: string;
+      stat_c_10013: string;
+    };
+    model: {
+      detail: {
+        data: {
+          id: number;
+          level: number;
+          type: number;
+          typeName: string;
+          more: boolean;
+          traceId: string;
+          style: null;
+          render: null;
+          data: {
+            title: string;
+            session: string;
+            extra: {
+              videoId: string;
+              videoLongId: number;
+              videoCategoryId: number;
+              videoCategory: string;
+              videoType: string;
+              videoTypeCode: null;
+              videoImg: string;
+              videoImgV: string;
+              showVideoStage: number;
+              videoPublishTime: string;
+              videoTitle: string;
+              showVideoStageDesc: string;
+              showId: string;
+              showLongId: number;
+              showCategoryId: number;
+              showCategory: string;
+              episodeTotal: number;
+              showName: string;
+              showSubtitle: string;
+              completed: boolean;
+              showImg: string;
+              showImgV: string;
+              episodeLast: number;
+              showReleaseTime: string;
+              episodeFinalStage: number;
+              playlistId: null;
+              playlistLongId: null;
+              playlistTitle: null;
+              scgId: null;
+              userId: null;
+              allowComment: boolean;
+              allowShare: boolean;
+              allowDownload: boolean;
+              allowLike: boolean;
+              isFavorite: boolean;
+              reportUrl: string;
+              pageKey: string;
+              prePaid: null;
+              paid: number;
+              duration: number;
+              totalComment: number;
+              totalUp: number;
+              verticalStyle: null;
+              isNewReservation: boolean;
+              politicsSensitive: null;
+              interactiveChapter: null;
+              playingType: null;
+              isTracking: boolean;
+              isPugv: boolean;
+              adRestricted: number;
+              autoPay: boolean;
+              albumId: null;
+              microVideoSchema: null;
+              videoRiskMark: null;
+              audiolang: unknown[];
+              videoSizes: null;
+              downloadStatus: unknown[];
+              videoKind: null;
+              subCategories: null;
+              hasVideoType: null;
+              animeEdition: null;
+              videoCacheConfig: {
+                resourceId: string;
+                downloadStatus: string;
+                toastText: string;
+                buttonDesc: string;
+                isVipUser: null;
+                icon: {
+                  imgUrl: null;
+                  text: null;
+                  bgColor: null;
+                };
+              };
+              showPackageType: null;
+              videoPackageType: null;
+              showLibraryTag: number[];
+              videoLibraryTag: number[];
+              streamTypes: string[];
+              safetyContentElement: null;
+            };
+          };
+          nodes: {
+            id: number;
+            level: number;
+            type: number;
+            typeName: string;
+            more: boolean;
+            traceId: string;
+            style: null;
+            render: null;
+            data: {
+              session: string;
+            };
+            nodes: {
+              id: number;
+              level: number;
+              type: number;
+              typeName: string;
+              more: boolean;
+              traceId: string;
+              style: null;
+              render: null;
+              data: {
+                session: string;
+                subtitle: string;
+                allowPlay: number;
+                action: {
+                  type: string;
+                  value: null;
+                  contentType: null;
+                  contentValue: null;
+                  reportDisabled: boolean;
+                  extra: null;
+                  callback: null;
+                  reportConfig: null;
+                  report: {
+                    pageName: string;
+                    arg1: string;
+                    spmAB: string;
+                    spmC: string;
+                    spmD: string;
+                    scmAB: string;
+                    scmC: string;
+                    scmD: string;
+                    index: number;
+                    reportDataOpt: boolean;
+                    trackInfo: {
+                      component_id: string;
+                      pvv_vid: string;
+                      component_instance_id: number;
+                      utdid: string;
+                      servertime: number;
+                      pageid: string;
+                      lifecycle: number;
+                      drawerid: string;
+                      pvv_sid: string;
+                      cms_req_id: string;
+                    };
+                    utParam: null;
+                  };
+                };
+                allowRefresh: number;
+                title: string;
+              };
+              nodes: {
+                id: number;
+                level: number;
+                type: number;
+                typeName: string;
+                more: boolean;
+                traceId: string;
+                style: null;
+                render: null;
+                data: {
+                  heat: number;
+                  updateInfo: string;
+                  showImgV: string;
+                  introTitle: string;
+                  mark: {
+                    type: string;
+                    data: {
+                      text: string;
+                      color: string;
+                      iconfont: null;
+                      colorValue: null;
+                      img: null;
+                      img2: null;
+                      ratio: null;
+                      imgList: null;
+                    };
+                  };
+                  introSubTitle: string;
+                  desc: string;
+                };
+                nodes: null;
+                layout: null;
+                header: null;
+                contentId: null;
+                raxConfig: null;
+                config: null;
+              }[];
+              layout: null;
+              header: null;
+              contentId: null;
+              raxConfig: null;
+              config: null;
+            }[];
+            layout: null;
+            header: null;
+            contentId: null;
+            raxConfig: null;
+            config: null;
+          }[];
+          layout: null;
+          header: null;
+          contentId: null;
+          raxConfig: null;
+          config: null;
+        };
+      };
+    };
+  };
+  shieldSwitch: boolean;
+  rid: number;
+  videoId: string;
+  showId: string;
+  playlistId: null;
+  ip: string;
+  proxyIp: string;
+  isIku: boolean;
+  isI18n: boolean;
 };
+
+export type YoukuSeasonProfileResp = {
+  api: string;
+  data: {
+    2019030100: {
+      data: {
+        data: {
+          stageTabs: {
+            itemEndStage: string;
+            title: string;
+            itemStartStage: string;
+          }[];
+          session: string;
+          pageSize: number;
+          positionStyle: number;
+          title: string;
+          pageIndex: number;
+          series: {
+            current: boolean;
+            showId: string;
+            showLongId: number;
+            session: string;
+            action: {
+              report: {
+                spmD: string;
+                reportDataOpt: boolean;
+                scmD: string;
+                trackInfo: {
+                  lifecycle: number;
+                  component_id: string;
+                  pvv_vid: string;
+                  component_instance_id: number;
+                  utdid: string;
+                  servertime: number;
+                  pageid: string;
+                  pvv_sid: string;
+                  cms_req_id: string;
+                };
+                scmC: string;
+                arg1: string;
+                spmC: string;
+                spmAB: string;
+                index: number;
+                pageName: string;
+                scmAB: string;
+              };
+              type: string;
+              reportDisabled: boolean;
+            };
+            title: string;
+            lastEpisodeVideoId: string;
+          }[];
+          allowPlay: number;
+          allowUnionRefresh: number;
+          action: {
+            report: {
+              spmD: string;
+              reportDataOpt: boolean;
+              scmD: string;
+              trackInfo: {
+                lifecycle: number;
+                component_id: string;
+                pvv_vid: string;
+                component_instance_id: number;
+                utdid: string;
+                servertime: number;
+                pageid: string;
+                pvv_sid: string;
+                cms_req_id: string;
+              };
+              scmC: string;
+              arg1: string;
+              spmC: string;
+              spmAB: string;
+              index: number;
+              pageName: string;
+              scmAB: string;
+            };
+            type: string;
+            reportDisabled: boolean;
+          };
+          allowRefresh: number;
+          allowDownload: boolean;
+          lastStage: number;
+        };
+        id: number;
+        level: number;
+        more: boolean;
+        nodes: {
+          data: {
+            summary: string;
+            versionType: number[];
+            img: string;
+            titleLine: number;
+            stage: number;
+            videoType: string;
+            summaryType: string;
+            subtitle: string;
+            paid: number;
+            action: {
+              extra: {
+                showId: string;
+                extraParams: {
+                  allowMulti: boolean;
+                };
+              };
+              report: {
+                spmD: string;
+                reportDataOpt: boolean;
+                scmD: string;
+                trackInfo: {
+                  component_id: string;
+                  pvv_vid: string;
+                  component_instance_id: number;
+                  utdid: string;
+                  servertime: number;
+                  rsc_r: string;
+                  rsc_s: string;
+                  videoid: number;
+                  pageid: string;
+                  lifecycle: number;
+                  material_id: string;
+                  pvv_sid: string;
+                  video_id: number;
+                  cms_req_id: string;
+                };
+                scmC: string;
+                arg1: string;
+                spmC: string;
+                spmAB: string;
+                index: number;
+                pageName: string;
+                scmAB: string;
+              };
+              type: string;
+              value: string;
+              reportDisabled: boolean;
+            };
+            title: string;
+          };
+          id: number;
+          level: number;
+          more: boolean;
+          type: number;
+        }[];
+        type: number;
+        typeName: string;
+      };
+      headers: {
+        stat_req_episode: string;
+        manufacturingDate: string;
+        stat_c_10013: string;
+      };
+      msCode: string;
+      success: boolean;
+    };
+  };
+  ret: string[];
+  v: string;
+};
+
+export type YoukuEpisodeProfileResp = {
+  api: string;
+  data: {
+    2019030100: {
+      data: {
+        data: {
+          session: string;
+          extra: {
+            autoPay: boolean;
+            videoCategory: string;
+            audiolang: {
+              vid: number;
+              langcode: string;
+              lang: string;
+            }[];
+            videoId: string;
+            showReleaseTime: string;
+            videoLibraryTag: number[];
+            episodeFinalStage: number;
+            showCategory: string;
+            videoType: string;
+            allowLike: boolean;
+            isNewReservation: boolean;
+            completed: boolean;
+            allowComment: boolean;
+            streamTypes: string[];
+            totalUp: number;
+            videoCategoryId: number;
+            showVideoStageDesc: string;
+            showImg: string;
+            isFavorite: boolean;
+            totalComment: number;
+            videoCacheConfig: {
+              resourceId: string;
+              buttonDesc: string;
+              icon: {};
+              downloadStatus: string;
+              toastText: string;
+            };
+            episodeTotal: number;
+            pageKey: string;
+            showVideoStage: number;
+            allowShare: boolean;
+            duration: number;
+            showSubtitle: string;
+            showId: string;
+            showImgV: string;
+            isPugv: boolean;
+            videoPublishTime: string;
+            showCategoryId: number;
+            allowDownload: boolean;
+            videoImgV: string;
+            showName: string;
+            showLongId: number;
+            videoImg: string;
+            reportUrl: string;
+            videoTitle: string;
+            isTracking: boolean;
+            episodeLast: number;
+            showLibraryTag: number[];
+            paid: number;
+            adRestricted: number;
+            downloadStatus: string[];
+            videoLongId: number;
+          };
+          title: string;
+        };
+        id: number;
+        level: number;
+        more: boolean;
+        nodes: {
+          data: {
+            session: string;
+          };
+          id: number;
+          level: number;
+          more: boolean;
+          nodes: {
+            data: {
+              session: string;
+              subtitle: string;
+              allowPlay: number;
+              action: {
+                report: {
+                  spmD: string;
+                  reportDataOpt: boolean;
+                  scmD: string;
+                  trackInfo: {
+                    lifecycle: number;
+                    component_id: string;
+                    drawerid: string;
+                    pvv_vid: string;
+                    component_instance_id: number;
+                    utdid: string;
+                    servertime: number;
+                    pageid: string;
+                    pvv_sid: string;
+                    cms_req_id: string;
+                  };
+                  scmC: string;
+                  arg1: string;
+                  spmC: string;
+                  spmAB: string;
+                  index: number;
+                  pageName: string;
+                  scmAB: string;
+                };
+                type: string;
+                reportDisabled: boolean;
+              };
+              allowRefresh: number;
+              title: string;
+            };
+            id: number;
+            level: number;
+            more: boolean;
+            nodes: {
+              data: {
+                heat: number;
+                updateInfo: string;
+                audioLang: {
+                  langCode: string;
+                  videoId: string;
+                  lang: string;
+                }[];
+                showImgV: string;
+                introTitle: string;
+                mark: {
+                  data: {
+                    color: string;
+                    text: string;
+                  };
+                  type: string;
+                };
+                introSubTitle: string;
+                desc: string;
+                personId: string;
+                img: string;
+                title: string;
+                subtitle: string;
+              };
+              id: number;
+              level: number;
+              more: boolean;
+              type: number;
+              typeName: string;
+            }[];
+            type: number;
+            typeName: string;
+          }[];
+          type: number;
+          typeName: string;
+        }[];
+        type: number;
+        typeName: string;
+      };
+      headers: {
+        stat_req_episode: string;
+        manufacturingDate: string;
+        stat_c_10013: string;
+      };
+      msCode: string;
+      success: boolean;
+    };
+  };
+  ret: string[];
+  v: string;
+};
+
 /**
  * 根据关键字搜索电视剧
  * 移动端
  */
-export async function search_media_in_youku(keyword: string, options: YoukuRequestCommonPart & { page?: number } = {}) {
+export async function search_media_in_youku(keyword: string, options: RequestCommonPart & { page?: number } = {}) {
   const endpoint = "https://search.youku.com/search_video";
   const query = {
     keyword,
@@ -180,7 +1187,7 @@ export type TVProfileItemInYouku = UnpackedResult<Unpacked<ReturnType<typeof sea
  * 根据关键字搜索电视剧
  * @param keyword
  */
-export async function search_movie_in_tmdb(keyword: string, options: YoukuRequestCommonPart & { page?: number }) {
+export async function search_movie_in_tmdb(keyword: string, options: RequestCommonPart & { page?: number }) {
   const endpoint = `/search/movie`;
   const { page, api_key } = options;
   const query = {
@@ -225,10 +1232,8 @@ export async function search_movie_in_tmdb(keyword: string, options: YoukuReques
         original_name: original_title,
         air_date: release_date,
         first_air_date: release_date,
-        ...fix_TMDB_image_path({
-          backdrop_path,
-          poster_path,
-        }),
+        backdrop_path,
+        poster_path,
       };
     }),
   };
@@ -241,7 +1246,7 @@ export type MovieProfileItemInTMDB = UnpackedResult<Unpacked<ReturnType<typeof s
  * @link https://developers.themoviedb.org/3/tv/get-tv-details
  * @param id 电视剧 tmdb id
  */
-export async function fetch_tv_profile_in_youku(id: string | number, query: YoukuRequestCommonPart) {
+export async function fetch_tv_profile_in_youku(id: string | number, query: RequestCommonPart) {
   if (id === undefined) {
     return Result.Err("请传入电视剧 id");
   }
@@ -378,7 +1383,7 @@ export async function fetch_tv_profile_in_youku(id: string | number, query: Youk
       }),
     origin_country: info.data.area
       .map((area) => {
-        return YOUKU_ORIGIN_COUNTRY_MAP[area];
+        return MEDIA_COUNTRY_MAP[area];
       })
       .filter(Boolean),
   });
@@ -396,7 +1401,7 @@ export async function fetch_season_profile(
     tv_id: number | string;
     season_number: number | undefined;
   },
-  options: YoukuRequestCommonPart
+  options: RequestCommonPart
 ) {
   const { tv_id, season_number } = body;
   if (season_number === undefined) {
@@ -481,9 +1486,7 @@ export async function fetch_season_profile(
         runtime,
       };
     }),
-    ...fix_TMDB_image_path({
-      poster_path,
-    }),
+    poster_path,
   });
 }
 export type SeasonProfileFromTMDB = UnpackedResult<Unpacked<ReturnType<typeof fetch_season_profile>>>;
@@ -498,7 +1501,7 @@ export async function fetch_episode_profile(
     season_number: number | string | undefined;
     episode_number: number | string | undefined;
   },
-  option: YoukuRequestCommonPart
+  option: RequestCommonPart
 ) {
   const { tv_id, season_number, episode_number } = body;
   if (season_number === undefined) {
@@ -550,7 +1553,7 @@ export type EpisodeProfileFromTMDB = UnpackedResult<Unpacked<ReturnType<typeof f
  * @link https://developers.themoviedb.org/3/tv/get-tv-details
  * @param id 电视剧 tmdb id
  */
-export async function fetch_movie_profile(id: number | undefined, query: YoukuRequestCommonPart) {
+export async function fetch_movie_profile(id: number | undefined, query: RequestCommonPart) {
   if (id === undefined) {
     return Result.Err("请传入电影 id");
   }
@@ -639,10 +1642,8 @@ export async function fetch_movie_profile(id: number | undefined, query: YoukuRe
     origin_country: r.data.production_countries.map((country) => {
       return country["iso_3166_1"];
     }),
-    ...fix_TMDB_image_path({
-      poster_path,
-      backdrop_path,
-    }),
+    poster_path,
+    backdrop_path,
   });
 }
 export type MovieProfileFromTMDB = UnpackedResult<Unpacked<ReturnType<typeof fetch_movie_profile>>>;

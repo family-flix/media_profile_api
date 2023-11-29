@@ -3,6 +3,7 @@
  */
 export const MEDIA_COUNTRY_MAP: Record<string, string> = {
   大陆: "CN",
+  普通话: "CN",
   内地: "CN",
   中国: "CN",
   韩国: "KR",
@@ -18,6 +19,8 @@ export const MEDIA_GENRES_MAP: Record<string, string> = {
   真人秀: "真人秀",
   综艺: "真人秀",
   剧情: "剧情",
+  犯罪: "犯罪",
+  动作: "动作",
   // 游戏: "真人秀",
 };
 export const MEDIA_SOURCE_MAP: Record<string, string> = {

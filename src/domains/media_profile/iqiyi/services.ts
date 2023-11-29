@@ -16,252 +16,6 @@ export type RequestCommonPart = {
   /** tmdb api key */
   api_key?: string;
 };
-/**
- * 详情页数据
- */
-export type IQiyiProfilePageInfo = {
-  tvId: number;
-  albumId: number;
-  channelId: number;
-  description: string;
-  subtitle: string;
-  imageUrl: string;
-  albumImageUrl: string;
-  /** 非综艺有这个 */
-  videoCount: string;
-  /** 语言、类型、标签等 */
-  categories: {
-    id: number;
-    qipuId: number;
-    name: string;
-    /**
-     * 2 类型
-     */
-    subType: number;
-    lastUpdateTime: number;
-    display: number;
-    subName: string;
-    parentId: number;
-    childOrder: number;
-    mainMelody: boolean;
-    url: string;
-  }[];
-  albumName: string;
-  /** 演职员 */
-  people: Record<
-    string,
-    {
-      id: number;
-      name: string;
-      /** 角色名 */
-      character: string[];
-      image_url: string;
-      paopao_summary: {
-        circle_id: number;
-        circle_id_type: string;
-      };
-    }[]
-  >;
-};
-export type IQiyiProfileBaseInfo = {
-  base_data: {
-    _id: number;
-    share_url: string;
-    album_source_type: string;
-    qipu_id: number;
-    title: string;
-    current_video_title: string;
-    current_video_content_type: number;
-    current_video_is_lock: boolean;
-    is_classic_hd: boolean;
-    current_video_year: string;
-    ab_test_tag: string;
-    board_info: {
-      board_txt: string;
-      board_order: number;
-      related_temp: string;
-      board_type: string;
-    };
-    business_type: unknown[];
-    channel_id: number;
-    heat: number;
-    desc: string;
-    feature_id: number;
-    image_url: string;
-    is_download_allowed: boolean;
-    play_show_status: number;
-    play_url: string;
-    promote_vip_type: number;
-    publish_date: string;
-    label: {
-      txt: string;
-      type: number;
-      style: string;
-    }[];
-    update_info: {
-      update_notification: string;
-      update_status: string;
-      extra_tip: string;
-      album_finish: boolean;
-    };
-    update_time: string;
-    score_info: {
-      user_score: null;
-      user_score_count: null;
-      sns_score: string;
-      sns_star_number_info: {
-        star_total_number: number;
-        one_star_number: number;
-        two_star_number: number;
-        three_star_number: number;
-        four_star_number: number;
-        five_star_number: number;
-      };
-    };
-    album_calendar: {
-      start_update_time: string;
-    };
-    can_give: boolean;
-    is_ugc: boolean;
-    feature_count: number;
-    show_interact_btn: boolean;
-    total_episode: number;
-    ai: {
-      people_rec: boolean;
-      bgm_rec: boolean;
-    };
-    warm_up: boolean;
-    cloud_cinema: boolean;
-    new_play_list: boolean;
-    old_lib: boolean;
-    can_favor: boolean;
-  };
-  template: {
-    template_id: string;
-    version: string;
-    pure_data: {
-      selector_bk: {
-        videos: {
-          feature_paged: Record<
-            string,
-            {
-              page_url: string;
-              play_show_status: number;
-              multi_episode_order: number;
-              play_url: string;
-              pay_mark_url: string;
-              image_url: string;
-              short_display_name: string;
-              title: string;
-              pay_mark: number;
-              mark_type_show: number;
-              qipu_id: number;
-              last_update_time: string;
-              scaled_img_size: string[];
-              subtitle: string;
-              content_type: number;
-              album_order: number;
-            }[]
-          >;
-          /** 可以理解成 tab，就是上面 Record 的 key */
-          page_keys: string[];
-        };
-        language: string;
-        tab_name: string;
-        order: number;
-        entity_id: number;
-        video_list_type: string;
-        is_group: boolean;
-      }[];
-      source_selector_bk: {
-        videos:
-          | string
-          | {
-              title: string;
-              data: {
-                page_url: string;
-                play_show_status: number;
-                multi_episode_order: number;
-                play_url: string;
-                pay_mark_url: string;
-                image_url: string;
-                short_display_name: string;
-                title: string;
-                pay_mark: number;
-                mark_type_show: number;
-                qipu_id: number;
-                last_update_time: string;
-                scaled_img_size: string[];
-                content_type: number;
-                subtitle: string;
-                publish_date: string;
-              }[];
-            }[];
-        language: string;
-        tab_name: string;
-        order: number;
-        entity_id: number;
-        video_list_type: string;
-        is_group: boolean;
-      }[];
-    };
-  };
-};
-
-/**
- * 获取剧集列表的响应
- */
-export type IQiyiEpisodeResp = {
-  data: {
-    videos:
-      | {
-          feature_paged: Record<
-            string,
-            {
-              page_url: string;
-              play_show_status: number;
-              multi_episode_order: number;
-              play_url: string;
-              pay_mark_url: string;
-              image_url: string;
-              short_display_name: string;
-              title: string;
-              pay_mark: number;
-              mark_type_show: number;
-              qipu_id: number;
-              last_update_time: string;
-              scaled_img_size: string[];
-              content_type: number;
-              subtitle: string;
-              album_order: number;
-            }[]
-          >;
-          page_keys: string[];
-        }
-      | {
-          title: string;
-          data: {
-            page_url: string;
-            play_show_status: number;
-            multi_episode_order: number;
-            play_url: string;
-            pay_mark_url: string;
-            image_url: string;
-            short_display_name: string;
-            title: string;
-            pay_mark: number;
-            mark_type_show: number;
-            qipu_id: number;
-            last_update_time: string;
-            scaled_img_size: string[];
-            content_type: number;
-            subtitle: string;
-            publish_date: string;
-          }[];
-        }[];
-    entity_id: number;
-  };
-};
 
 let cache: Record<string, any> = {};
 function clear_cache() {
@@ -274,7 +28,7 @@ type RequestClient = {
   get: <T>(url: string, query?: Record<string, string | number | undefined>) => Promise<Result<T>>;
   post: <T>(url: string, body: Record<string, string | number | undefined>) => Promise<Result<T>>;
 };
-export const request: RequestClient = {
+export const iqiyi_request: RequestClient = {
   get: async <T extends null>(endpoint: string, query?: Record<string, string | number | undefined>) => {
     const url = endpoint;
     // setTimeout(() => {
@@ -336,6 +90,300 @@ export const request: RequestClient = {
 };
 
 /**
+ * 详情页数据
+ * 包含了当前剧集、季/电影信息
+ */
+export type IQiyiProfilePageInfo = {
+  tvId: number;
+  albumId: number;
+  /**
+   * 大类别
+   * 1电影
+   * 2电视剧
+   */
+  channelId: number;
+  /** 简介 */
+  description: string;
+  subtitle: string;
+  /**
+   * 在原始图片链接后面可以拼接三种尺寸
+   * https://pic5.iqiyipic.com/image/20231123/1f/da/v_174083380_m_601_m5.jpg
+   * https://pic5.iqiyipic.com/image/20231123/1f/da/v_174083380_m_601_m5_260_360.jpg
+   * https://pic5.iqiyipic.com/image/20231123/1f/da/v_174083380_m_601_m5_405_540.jpg
+   * https://pic5.iqiyipic.com/image/20231123/1f/da/v_174083380_m_601_m5_579_772.jpg
+   * 拼接另外两种，直接变成截图
+   * https://pic5.iqiyipic.com/image/20231123/1f/da/v_174083380_m_601_m5_480_270.jpg
+   * https://pic5.iqiyipic.com/image/20231123/1f/da/v_174083380_m_601_m5_592_333.jpg
+   */
+  imageUrl: string;
+  albumImageUrl: string;
+  /** 非综艺有这个 */
+  videoCount: string;
+  /**
+   * 时长
+   * 02:08:24 这种格式
+   */
+  duration: string;
+  /** 时长，秒数 */
+  durationSec: number;
+  /**
+   * 上映时间（院线电影才有这个？）
+   */
+  period: string;
+  /**
+   * 0配音语种
+   * 2类型
+   * 3标签
+   */
+  categories: {
+    id: number;
+    qipuId: number;
+    name: string;
+    /**
+     * 2 类型
+     */
+    subType: number;
+    lastUpdateTime: number;
+    display: number;
+    subName: string;
+    parentId: number;
+    childOrder: number;
+    mainMelody: boolean;
+    url: string;
+  }[];
+  albumName: string;
+  /** 评分 */
+  score: number;
+  /** 演职员 */
+  people: Record<
+    string,
+    {
+      id: number;
+      name: string;
+      /** 角色名 */
+      character: string[];
+      image_url: string;
+      paopao_summary: {
+        circle_id: number;
+        circle_id_type: string;
+      };
+    }[]
+  >;
+};
+
+/**
+ * 单纯的剧或电影信息
+ */
+export type IQiyiProfileBaseInfo = {
+  base_data: {
+    _id: number;
+    share_url: string;
+    album_source_type: string;
+    qipu_id: number;
+    title: string;
+    current_video_title: string;
+    current_video_content_type: number;
+    current_video_is_lock: boolean;
+    is_classic_hd: boolean;
+    current_video_year: string;
+    ab_test_tag: string;
+    board_info: {
+      board_txt: string;
+      board_order: number;
+      related_temp: string;
+      board_type: string;
+    };
+    business_type: unknown[];
+    channel_id: number;
+    heat: number;
+    desc: string;
+    feature_id: number;
+    /** 海报 */
+    image_url: string;
+    is_download_allowed: boolean;
+    play_show_status: number;
+    play_url: string;
+    promote_vip_type: number;
+    /** 上映时间 */
+    publish_date: string;
+    label: {
+      txt: string;
+      type: number;
+      style: string;
+    }[];
+    update_info: {
+      update_notification: string;
+      update_status: string;
+      extra_tip: string;
+      album_finish: boolean;
+    };
+    update_time: string;
+    score_info: {
+      user_score: null;
+      user_score_count: null;
+      sns_score: string;
+      sns_star_number_info: {
+        star_total_number: number;
+        one_star_number: number;
+        two_star_number: number;
+        three_star_number: number;
+        four_star_number: number;
+        five_star_number: number;
+      };
+    };
+    album_calendar: {
+      start_update_time: string;
+    };
+    can_give: boolean;
+    is_ugc: boolean;
+    feature_count: number;
+    show_interact_btn: boolean;
+    total_episode: number;
+    ai: {
+      people_rec: boolean;
+      bgm_rec: boolean;
+    };
+    warm_up: boolean;
+    cloud_cinema: boolean;
+    new_play_list: boolean;
+    old_lib: boolean;
+    can_favor: boolean;
+  };
+  template: {
+    template_id: string;
+    version: string;
+    pure_data: {
+      /** 电视剧剧集 */
+      selector_bk: {
+        videos: {
+          feature_paged: Record<
+            string,
+            {
+              page_url: string;
+              play_show_status: number;
+              multi_episode_order: number;
+              play_url: string;
+              pay_mark_url: string;
+              image_url: string;
+              short_display_name: string;
+              title: string;
+              pay_mark: number;
+              mark_type_show: number;
+              qipu_id: number;
+              last_update_time: string;
+              scaled_img_size: string[];
+              subtitle: string;
+              content_type: number;
+              album_order: number;
+            }[]
+          >;
+          /** 可以理解成 tab，就是上面 Record 的 key */
+          page_keys: string[];
+        };
+        language: string;
+        tab_name: string;
+        order: number;
+        entity_id: number;
+        video_list_type: string;
+        is_group: boolean;
+      }[];
+      /** 综艺/真人秀剧集 */
+      source_selector_bk: {
+        videos:
+          | string
+          | {
+              title: string;
+              data: {
+                page_url: string;
+                play_show_status: number;
+                multi_episode_order: number;
+                play_url: string;
+                pay_mark_url: string;
+                image_url: string;
+                short_display_name: string;
+                title: string;
+                pay_mark: number;
+                mark_type_show: number;
+                qipu_id: number;
+                last_update_time: string;
+                scaled_img_size: string[];
+                content_type: number;
+                subtitle: string;
+                publish_date: string;
+              }[];
+            }[];
+        language: string;
+        tab_name: string;
+        order: number;
+        entity_id: number;
+        video_list_type: string;
+        is_group: boolean;
+      }[];
+    };
+  };
+};
+
+/**
+ * 获取剧集列表的响应
+ */
+export type IQiyiEpisodeResp = {
+  data: {
+    videos:
+      | {
+          feature_paged: Record<
+            string,
+            {
+              page_url: string;
+              play_show_status: number;
+              multi_episode_order: number;
+              play_url: string;
+              pay_mark_url: string;
+              image_url: string;
+              short_display_name: string;
+              title: string;
+              pay_mark: number;
+              mark_type_show: number;
+              qipu_id: number;
+              last_update_time: string;
+              scaled_img_size: string[];
+              /**
+               * 1正片
+               * 3预告
+               * 28花絮/番外/彩蛋等
+               */
+              content_type: number;
+              subtitle: string;
+              album_order: number;
+            }[]
+          >;
+          page_keys: string[];
+        }
+      | {
+          title: string;
+          data: {
+            page_url: string;
+            play_show_status: number;
+            multi_episode_order: number;
+            play_url: string;
+            pay_mark_url: string;
+            image_url: string;
+            short_display_name: string;
+            title: string;
+            pay_mark: number;
+            mark_type_show: number;
+            qipu_id: number;
+            last_update_time: string;
+            scaled_img_size: string[];
+            content_type: number;
+            subtitle: string;
+            publish_date: string;
+          }[];
+        }[];
+    entity_id: number;
+  };
+};
+
+/**
  * 根据关键字搜索电视剧
  * @param keyword
  */
@@ -344,7 +392,7 @@ export async function search_media_in_iqiyi(keyword: string, options: RequestCom
   const query = {
     source: "input",
   };
-  const result = await request.get<string>(endpoint, query);
+  const result = await iqiyi_request.get<string>(endpoint, query);
   const { error, data } = result;
   if (error) {
     return Result.Err(error.message);
@@ -459,7 +507,7 @@ export async function search_media_in_iqiyi(keyword: string, options: RequestCom
  * 根据关键字搜索电视剧
  * @param keyword
  */
-export async function search_movie_in_tmdb(keyword: string, options: RequestCommonPart & { page?: number }) {
+export async function search_movie_in_iqiyi(keyword: string, options: RequestCommonPart & { page?: number }) {
   const endpoint = `/search/movie`;
   const { page, api_key } = options;
   const query = {
@@ -468,7 +516,7 @@ export async function search_movie_in_tmdb(keyword: string, options: RequestComm
     page,
     include_adult: "false",
   };
-  const result = await request.get<{
+  const result = await iqiyi_request.get<{
     page: number;
     total_pages: number;
     total_results: number;
@@ -511,7 +559,7 @@ export async function search_movie_in_tmdb(keyword: string, options: RequestComm
   };
   return Result.Ok(resp);
 }
-export type MovieProfileItemInTMDB = UnpackedResult<Unpacked<ReturnType<typeof search_movie_in_tmdb>>>["list"][number];
+export type MovieProfileItemInTMDB = UnpackedResult<Unpacked<ReturnType<typeof search_movie_in_iqiyi>>>["list"][number];
 
 /**
  * 根据指定季，获取该季下所有剧集
@@ -523,7 +571,7 @@ export async function fetch_episodes_of_season_in_iqiyi(body: {
 }) {
   const { season_id } = body;
   const endpoint = `https://mesh.if.iqiyi.com/tvg/v2/selector`;
-  const r = await request.get<{
+  const r = await iqiyi_request.get<{
     videos: {
       title: string;
       data: {
@@ -589,7 +637,7 @@ export async function fetch_tv_profile_in_iqiyi(id: string | number, query: Requ
   }
   const endpoint = String(id);
   const { api_key } = query;
-  const r = await request.get<string>(endpoint, {
+  const r = await iqiyi_request.get<string>(endpoint, {
     api_key,
   });
   if (r.error) {
@@ -646,7 +694,7 @@ export async function fetch_tv_profile_in_iqiyi(id: string | number, query: Requ
   if (json === null) {
     return Result.Err("解析失败1");
   }
-  const season_res = await request.get<{
+  const season_res = await iqiyi_request.get<{
     data: {
       base_data: {
         _id: number;
@@ -892,7 +940,7 @@ export type PartialSeasonFromTMDB = TVProfileFromTMDB["seasons"][number];
  * @param number 第几季
  */
 export async function fetch_season_profile(season_id: string, options: RequestCommonPart) {
-  const season_res = await request.get<{
+  const season_res = await iqiyi_request.get<{
     data: {
       base_data: {
         _id: number;
@@ -1031,7 +1079,7 @@ export type SeasonProfileFromTMDB = UnpackedResult<Unpacked<ReturnType<typeof fe
  * 获取电视剧某一集详情
  * @param number 第几季
  */
-export async function fetch_episode_profile(
+export async function fetch_episode_profile_in_iqiyi(
   body: {
     tv_id: number | string;
     season_number: number | string | undefined;
@@ -1048,7 +1096,7 @@ export async function fetch_episode_profile(
   }
   const endpoint = `/tv/${tv_id}/season/${season_number}/episode/${episode_number}`;
   const { api_key } = option;
-  const result = await request.get<{
+  const result = await iqiyi_request.get<{
     air_date: string;
     episode_number: number;
     name: string;
@@ -1081,20 +1129,20 @@ export async function fetch_episode_profile(
   });
 }
 
-export type EpisodeProfileFromTMDB = UnpackedResult<Unpacked<ReturnType<typeof fetch_episode_profile>>>;
+export type EpisodeProfileFromTMDB = UnpackedResult<Unpacked<ReturnType<typeof fetch_episode_profile_in_iqiyi>>>;
 
 /**
  * 获取电视剧详情
  * @link https://developers.themoviedb.org/3/tv/get-tv-details
  * @param id 电视剧 tmdb id
  */
-export async function fetch_movie_profile(id: number | undefined, query: RequestCommonPart) {
+export async function fetch_movie_profile_in_iqiyi(id: number | undefined, query: RequestCommonPart) {
   if (id === undefined) {
     return Result.Err("请传入电影 id");
   }
   const endpoint = `/movie/${id}`;
   const { api_key } = query;
-  const r = await request.get<{
+  const r = await iqiyi_request.get<{
     adult: boolean;
     backdrop_path: string;
     belongs_to_collection: {
@@ -1181,4 +1229,4 @@ export async function fetch_movie_profile(id: number | undefined, query: Request
     backdrop_path,
   });
 }
-export type MovieProfileFromTMDB = UnpackedResult<Unpacked<ReturnType<typeof fetch_movie_profile>>>;
+export type MovieProfileFromTMDB = UnpackedResult<Unpacked<ReturnType<typeof fetch_movie_profile_in_iqiyi>>>;
