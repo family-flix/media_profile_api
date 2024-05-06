@@ -6,6 +6,7 @@ import axios from "axios";
 import { Result, Unpacked, UnpackedResult } from "@/types";
 import { query_stringify } from "@/utils";
 import { SearchedTVItem } from "../types";
+import { MEDIA_SOURCE_MAP, MEDIA_TYPE_MAP } from "@/constants";
 
 // const API_HOST = "https://proxy.funzm.com/api/tmdb/3";
 const API_HOST = "https://proxy.f1x.fun/api/tmdb/3";
@@ -20,19 +21,24 @@ function fix_TMDB_image_path({
   backdrop_path,
   poster_path,
   profile_path,
+  still_path,
 }: Partial<{
   backdrop_path: null | string;
   poster_path: null | string;
   profile_path: null | string;
+  still_path: null | string;
 }>) {
+  // @ts-ignore
   const result: {
     backdrop_path: string | null;
     poster_path: string | null;
     profile_path: string | null;
+    still_path: string | null;
   } = {
-    backdrop_path: null,
-    poster_path: null,
-    profile_path: null,
+    // backdrop_path: null,
+    // poster_path: null,
+    // profile_path: null,
+    // still_path: null,
   };
   if (backdrop_path) {
     // result.backdrop_path = `https://proxy.funzm.com/api/tmdb_site/t/p/w1920_and_h800_multi_faces${backdrop_path}`;
@@ -43,6 +49,9 @@ function fix_TMDB_image_path({
   }
   if (profile_path) {
     result.profile_path = `https://www.themoviedb.org/t/p/w600_and_h900_bestv2${profile_path}`;
+  }
+  if (still_path) {
+    result.still_path = `https://www.themoviedb.org/t/p/w227_and_h127_bestv2${still_path}`;
   }
   return result;
 }
@@ -91,7 +100,8 @@ export type PartialSearchedTV = Omit<TVProfileItemInTMDB, "id" | "search_tv_in_t
  * 根据关键字搜索电视剧
  * @param keyword
  */
-export async function search_tv_in_tmdb(keyword: string, options: TMDBRequestCommentPart & { page?: number }) {
+export async function search_tv(keyword: string, options: TMDBRequestCommentPart & { page?: number }) {
+  console.log("[SERVICE]search_tv");
   const endpoint = `/search/tv`;
   const { page, api_key, language } = options;
   const query = {
@@ -163,18 +173,21 @@ export async function search_tv_in_tmdb(keyword: string, options: TMDBRequestCom
         }),
         first_air_date,
         origin_country,
+        type: "tv",
+        source: MEDIA_SOURCE_MAP["tmdb"],
       } as SearchedTVItem;
     }),
   };
   return Result.Ok(resp);
 }
-export type TVProfileItemInTMDB = UnpackedResult<Unpacked<ReturnType<typeof search_tv_in_tmdb>>>["list"][number];
+export type TVProfileItemInTMDB = UnpackedResult<Unpacked<ReturnType<typeof search_tv>>>["list"][number];
 
 /**
  * 根据关键字搜索电视剧
  * @param keyword
  */
 export async function search_movie_in_tmdb(keyword: string, options: TMDBRequestCommentPart & { page?: number }) {
+  console.log("[SERVICE]search_movie_in_tmdb");
   const endpoint = `/search/movie`;
   const { page, api_key, language } = options;
   const query = {
@@ -244,6 +257,7 @@ export async function fetch_tv_profile(
     language?: Language;
   }
 ) {
+  console.log("[SERVICE]fetch_tv_profile");
   if (id === undefined) {
     return Result.Err("请传入电视剧 id");
   }
@@ -354,7 +368,7 @@ export async function fetch_tv_profile(
   } = r.data;
   return Result.Ok({
     id,
-    name,
+    name: (name || original_name)!,
     original_name,
     first_air_date,
     overview,
@@ -398,6 +412,7 @@ export async function fetch_season_profile(
     language?: Language;
   }
 ) {
+  console.log("[SERVICE]fetch_season_profile");
   const { tv_id, season_number } = body;
   if (season_number === undefined) {
     return Result.Err("请传入季数");
@@ -471,7 +486,7 @@ export async function fetch_season_profile(
     overview,
     season_number,
     episodes: episodes.map((e) => {
-      const { id, air_date, overview, episode_number, season_number, name, runtime } = e;
+      const { id, air_date, overview, episode_number, season_number, still_path, name, runtime } = e;
       return {
         id,
         name,
@@ -480,6 +495,9 @@ export async function fetch_season_profile(
         episode_number,
         season_number,
         runtime,
+        ...fix_TMDB_image_path({
+          still_path,
+        }),
       };
     }),
     ...fix_TMDB_image_path({

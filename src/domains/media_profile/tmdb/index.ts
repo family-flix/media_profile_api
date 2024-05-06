@@ -2,13 +2,14 @@
  * @file TMDB 搜索客户端
  */
 import { Result } from "@/types";
+
 import {
   fetch_episode_profile,
   fetch_season_profile,
   fetch_tv_profile,
   fetch_movie_profile,
   Language,
-  search_tv_in_tmdb,
+  search_tv,
   search_movie_in_tmdb,
   fetch_persons_of_season,
   fetch_person_profile,
@@ -41,7 +42,7 @@ export class TMDBClient {
   async search_tv(keyword: string, extra: Partial<{ page: number; language: "zh-CN" | "en-US" }> = {}) {
     const { token } = this.options;
     const { page, language } = extra;
-    return search_tv_in_tmdb(keyword, {
+    return search_tv(keyword, {
       page,
       api_key: token,
       language: language || this.options.language,
@@ -131,6 +132,7 @@ export class TMDBClient {
   }
   /** 获取电视剧详情 */
   async fetch_movie_profile(id: number | string) {
+    console.log("[SERVICE]fetch_movie_profile");
     const { token, language } = this.options;
     const result = await fetch_movie_profile(Number(id), {
       api_key: token,

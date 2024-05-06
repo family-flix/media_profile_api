@@ -7,9 +7,9 @@ import { Result, Unpacked, UnpackedResult } from "@/types";
 
 const API_HOST = "https://frodo.douban.com/api/v2";
 export type Language = "zh-CN" | "en-US";
-export type DoubanRequestCommonPart = {
-  /** tmdb api key */
-  api_key: string;
+export type RequestCommonPart = {
+  api_key?: string;
+  language?: string;
 };
 function fix_TMDB_image_path({
   backdrop_path,
@@ -101,7 +101,7 @@ export type PartialSearchedTV = Omit<
  * 根据关键字搜索电视剧
  * @param keyword
  */
-export async function search_tv_in_douban(keyword: string, options: DoubanRequestCommonPart & { page?: number }) {
+export async function search_tv_in_douban(keyword: string, options: RequestCommonPart & { page?: number }) {
   const endpoint = `/search/weixin`;
   const { api_key } = options;
   const query = {
@@ -180,7 +180,7 @@ export type TVProfileItemInDouban = UnpackedResult<Unpacked<ReturnType<typeof se
  * 根据关键字搜索电视剧
  * @param keyword
  */
-export async function search_movie_in_tmdb(keyword: string, options: DoubanRequestCommonPart & { page?: number }) {
+export async function search_movie_in_tmdb(keyword: string, options: RequestCommonPart & { page?: number }) {
   const endpoint = `/search/movie`;
   const { page, api_key } = options;
   const query = {
@@ -242,18 +242,12 @@ export type MovieProfileItemInTMDB = UnpackedResult<Unpacked<ReturnType<typeof s
  * @link https://developers.themoviedb.org/3/tv/get-tv-details
  * @param id 电视剧 tmdb id
  */
-export async function fetch_tv_profile(
-  id: number | undefined,
-  query: {
-    api_key: string;
-    language?: Language;
-  }
-) {
+export async function fetch_tv_profile(id: number | undefined, query: RequestCommonPart) {
   if (id === undefined) {
     return Result.Err("请传入电视剧 id");
   }
   const endpoint = `/tv/${id}`;
-  const { api_key, language } = query;
+  const { api_key } = query;
   const r = await request.get<{
     backdrop_path: string | null;
     created_by: {
@@ -336,7 +330,7 @@ export async function fetch_tv_profile(
     vote_count: number;
   }>(endpoint, {
     api_key,
-    language,
+    // language,
   });
   if (r.error) {
     return Result.Err(r.error);
@@ -398,17 +392,14 @@ export async function fetch_season_profile(
     tv_id: number | string;
     season_number: number | undefined;
   },
-  options: {
-    api_key: string;
-    language?: Language;
-  }
+  options: RequestCommonPart
 ) {
   const { tv_id, season_number } = body;
   if (season_number === undefined) {
     return Result.Err("请传入季数");
   }
   const endpoint = `/tv/${tv_id}/season/${season_number}`;
-  const { api_key, language } = options;
+  const { api_key } = options;
   const result = await request.get<{
     _id: string;
     air_date: string;
@@ -458,7 +449,7 @@ export async function fetch_season_profile(
     season_number: number;
   }>(endpoint, {
     api_key,
-    language,
+    // language,
   });
   if (result.error) {
     // console.log("find season in tmdb failed", result.error.message);
@@ -504,10 +495,7 @@ export async function fetch_episode_profile(
     season_number: number | string | undefined;
     episode_number: number | string | undefined;
   },
-  option: {
-    api_key: string;
-    language?: Language;
-  }
+  option: RequestCommonPart
 ) {
   const { tv_id, season_number, episode_number } = body;
   if (season_number === undefined) {
@@ -517,7 +505,7 @@ export async function fetch_episode_profile(
     return Result.Err("请传入集数");
   }
   const endpoint = `/tv/${tv_id}/season/${season_number}/episode/${episode_number}`;
-  const { api_key, language } = option;
+  const { api_key } = option;
   const result = await request.get<{
     air_date: string;
     episode_number: number;
@@ -532,7 +520,7 @@ export async function fetch_episode_profile(
     vote_count: number;
   }>(endpoint, {
     api_key,
-    language,
+    // language,
   });
   if (result.error) {
     // console.log("find episode in tmdb failed", result.error.message);
@@ -560,13 +548,7 @@ export type EpisodeProfileFromTMDB = UnpackedResult<Unpacked<ReturnType<typeof f
  * @link https://developers.themoviedb.org/3/tv/get-tv-details
  * @param id 电视剧 tmdb id
  */
-export async function fetch_movie_profile(
-  id: number | undefined,
-  query: {
-    api_key: string;
-    language?: Language;
-  }
-) {
+export async function fetch_movie_profile(id: number | undefined, query: RequestCommonPart) {
   if (id === undefined) {
     return Result.Err("请传入电影 id");
   }

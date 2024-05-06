@@ -1,33 +1,35 @@
 {
-  "name": "media_profile_api",
-  "version": "0.1.0",
+  "name": "@family-flix/media-profile-api",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "tsx watch ./src/index.ts --port 3201",
+    "start": "node dist/server.js",
+    "build": "esbuild ./src/index.ts --platform=node --target=node12 --legal-comments=none --bundle --minify --outfile=dist/server.js"
   },
   "dependencies": {
+    "@hono/node-server": "^1.11.1",
+    "@panva/hkdf": "^1.1.1",
     "@prisma/client": "5.6.0",
     "axios": "^1.6.2",
     "cheerio": "^1.0.0-rc.12",
     "dayjs": "^1.11.10",
-    "next": "14.0.3",
-    "prisma": "^5.6.0",
-    "react": "^18",
-    "react-dom": "^18",
-    "vitest": "^0.34.6"
+    "hono": "^4.3.2",
+    "jose": "^5.2.4",
+    "js-md5": "^0.8.3",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/uuid": "^9.0.8",
     "autoprefixer": "^10.0.1",
     "eslint": "^8",
     "eslint-config-next": "14.0.3",
     "postcss": "^8",
+    "prisma": "^5.6.0",
     "tailwindcss": "^3.3.0",
-    "typescript": "^5"
+    "tsx": "^4.9.3",
+    "typescript": "^5",
+    "vitest": "^0.34.6"
   }
 }

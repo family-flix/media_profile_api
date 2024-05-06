@@ -32,6 +32,7 @@ export const MEDIA_SOURCE_MAP: Record<string, string> = {
   iqiyi: "iqiyi",
   mgtv: "mgtv",
   imgo: "mgtv",
+  tmdb: "tmdb",
 };
 
 /**

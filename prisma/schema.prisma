@@ -10,39 +10,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model tv_profile {
+model series {
   id      String   @id
   created DateTime @default(now())
   updated DateTime @default(now())
 
   // 电视剧名称
-  name              String?
+  name           String
   // 电视剧原始名称/外文名称
-  original_name     String?
+  original_name  String?
   // 别名
-  alias             String  @default("")
+  alias          String  @default("")
   // 描述
-  overview          String?
+  overview       String?
   // 海报地址
-  poster_path       String?
+  poster_path    String?
   // 背景图片
-  backdrop_path     String?
+  backdrop_path  String?
   // 首播日期
-  first_air_date    String?
-  // 原始语言
-  original_language String?
+  first_air_date String?
   // 产地 HK(港剧)、CN(国产剧)、KR(韩剧)、US(美剧)、IN(印度)、JP(日剧)
-  origin_country    String  @default("")
+  origin_country String  @default("")
   // 标签(区分动画，也是用这个字段来区分)
-  genres            String  @default("")
-  // 总集数
-  episode_count     Int     @default(0)
-  // 总季数
-  season_count      Int     @default(0)
+  genres         String  @default("")
+  tmdb_id        String? @unique
 
   seasons season_profile[]
 
-  @@map("TVProfile")
+  @@map("Series")
 }
 
 model season_profile {
@@ -50,19 +45,23 @@ model season_profile {
   created DateTime @default(now())
   updated DateTime @default(now())
 
-  unique_id     String
-  source        Int
-  name          String?
-  overview      String?
-  poster_path   String?
-  air_date      String?
-  season_number Int     @default(0)
-  episode_count Int     @default(0)
-  vote_average  Float   @default(0)
-  in_production Int     @default(0)
+  name           String
+  alias          String  @default("")
+  overview       String?
+  poster_path    String?
+  air_date       String?
+  order          Int
+  episode_count  Int     @default(0)
+  vote_average   Float
+  in_production  Int     @default(0)
+  // 产地 HK(港剧)、CN(国产剧)、KR(韩剧)、US(美剧)、IN(印度)、JP(日剧)
+  origin_country String  @default("")
+  // 标签(区分动画，也是用这个字段来区分)
+  genres         String  @default("")
+  tmdb_id        String? @unique
 
   tv_profile_id String?
-  tv_profile    tv_profile? @relation(fields: [tv_profile_id], references: [id])
+  tv_profile    series? @relation(fields: [tv_profile_id], references: [id])
 
   episodes episode_profile[]
   persons  person_in_media[]
@@ -75,12 +74,13 @@ model episode_profile {
   created DateTime @default(now())
   updated DateTime @default(now())
 
-  name           String?
-  overview       String?
-  air_date       String?
-  episode_number Int
-  season_number  Int
-  runtime        Int?
+  name       String
+  overview   String?
+  air_date   String?
+  still_path String?
+  order      Int
+  runtime    Int?
+  tmdb_id    String? @unique
 
   season_profile_id String?
   season_profile    season_profile? @relation(fields: [season_profile_id], references: [id])
@@ -93,7 +93,7 @@ model movie_profile {
   created DateTime @default(now())
   updated DateTime @default(now())
 
-  name              String?
+  name              String
   original_name     String?
   alias             String?
   overview          String?
@@ -103,7 +103,9 @@ model movie_profile {
   original_language String?
   origin_country    String  @default("")
   genres            String  @default("")
+  vote_average      Float   @default(0)
   runtime           Int?
+  tmdb_id           String? @unique
 
   persons person_in_media[]
 

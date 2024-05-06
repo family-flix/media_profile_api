@@ -1,20 +1,23 @@
 /**
- * @file 豆瓣搜索客户端
+ * @file 豆瓣
  */
+import axios from "axios";
+import cheerio from "cheerio";
+
 import { Result } from "@/types";
+
 import {
   fetch_episode_profile,
   fetch_season_profile,
   fetch_tv_profile,
   fetch_movie_profile,
-  Language,
   search_tv_in_douban,
   search_movie_in_tmdb,
 } from "./services";
 
 export class DoubanClient {
   options: {
-    token: string;
+    token?: string;
   };
   constructor(
     options: Partial<{
@@ -23,20 +26,77 @@ export class DoubanClient {
     }>
   ) {
     const { token } = options;
-    if (token === undefined) {
-      throw new Error("请传入豆瓣 ApiKey");
-    }
     this.options = {
       token,
     };
   }
+
+  async search(keyword: string) {
+    const resp = await axios.get(`https://www.douban.com/search?q=${keyword}`);
+    const html = resp.data;
+    const $ = cheerio.load(html);
+    const $list = $(".result-list>.result");
+    const result = [];
+    for (let i = 0; i < $list.length; i += 1) {
+      (() => {
+        const $node = $($list[i]);
+        const html = $node.html();
+        if (!html) {
+          return;
+        }
+        const type_r = /<span>\[([^\]]{1,})\]<\/span>/;
+        const type = (() => {
+          const r = html.match(type_r)?.[1];
+          if (!r) {
+            return null;
+          }
+          const MAP: Record<string, string> = {
+            电视剧: "season",
+            电影: "movie",
+          };
+          return MAP[r] ?? null;
+        })();
+        if (!type) {
+          return;
+        }
+        const name_r = /<a[^>]{1,}>([^<]{1,})</;
+        const poster_r = /<img src="([^"]{1,})"/;
+        const overview_r = /<p>([^<]{1,})</;
+        const info_r = /<span class="subject-cast">([^<]{1,})<\/span>/;
+        const info = (() => {
+          const m = html.match(info_r);
+          if (!m) {
+            return null;
+          }
+          const r = m[1].split("/").map((t) => t.trim());
+          return {
+            air_date: r[r.length - 1],
+          };
+        })();
+        const vote_average_r = /<span class="rating_nums">([^<]{1,})<\/span>/;
+        const payload = {
+          name: html.match(name_r)?.[1] ?? null,
+          overview: html.match(overview_r)?.[1] ?? null,
+          poster_path: html.match(poster_r)?.[1] ?? null,
+          air_date: info?.air_date ?? null,
+          vote_average: html.match(vote_average_r)?.[1],
+          type,
+        };
+        result.push(payload);
+      })();
+    }
+    return Result.Ok({
+      list: result,
+    });
+  }
+
   /** 根据关键字搜索电视剧 */
   async search_tv(keyword: string, extra: Partial<{ page: number; language: "zh-CN" | "en-US" }> = {}) {
     const { token } = this.options;
     const { page } = extra;
     return search_tv_in_douban(keyword, {
       page,
-      api_key: token,
+      // api_key: token,
     });
   }
   /** 获取电视剧详情 */
@@ -57,7 +117,7 @@ export class DoubanClient {
         season_number: Number(season_number),
       },
       {
-        api_key: token,
+        // api_key: token,
       }
     );
     if (r.error) {
@@ -102,7 +162,7 @@ export class DoubanClient {
         episode_number,
       },
       {
-        api_key: token,
+        // api_key: token,
       }
     );
     return result;
@@ -120,7 +180,7 @@ export class DoubanClient {
   async fetch_movie_profile(id: number | string) {
     const { token } = this.options;
     const result = await fetch_movie_profile(Number(id), {
-      api_key: token,
+      // api_key: token,
     });
     return result;
   }
