@@ -3,14 +3,21 @@ import { logger } from "hono/logger";
 import { serve } from "@hono/node-server";
 import dayjs from "dayjs";
 
-import { brand } from "./utils/text";
 import { app } from "./store/index";
 import { static_serve } from "./middlewares/static";
 import { YoukuClient } from "./domains/media_profile/youku";
 import { IQiyiClient } from "./domains/media_profile/iqiyi";
-import { MaoyanClient } from "./domains/media_rank/maoyan";
+import { MaoyanRankClient } from "./domains/media_rank/maoyan/index";
+import { DoubanRankClient } from "./domains/media_rank/douban";
+import { brand } from "./utils/text";
+import { simple_resp } from "./utils/server";
+import { Result } from "./types";
 
 const DEFAULT_PORT = 3201;
+enum MediaRankSource {
+  Maoyan,
+  Douban,
+}
 
 async function main() {
   const server = new Hono<{ Bindings: {}; Variables: {} }>();
@@ -63,44 +70,20 @@ async function main() {
       data: null,
     });
   });
-  server.post("/media_profile/v1/analysis", async (c) => {
+  server.post("/api/v1/analysis", async (c) => {
+    const resp = simple_resp(c);
     const { url } = await c.req.json();
     const u = decodeURIComponent(url);
     if (u.startsWith("https://www.iqiyi.com/")) {
       const client = new IQiyiClient({});
       const r = await client.fetch_profile_with_seasons(u);
-      if (r.error) {
-        return c.json({
-          code: 1002,
-          msg: r.error.message,
-          data: null,
-        });
-      }
-      return c.json({
-        code: 0,
-        msg: "",
-        data: r.data,
-      });
+      return resp(r);
     }
     if (u.startsWith("https://v.youku.com/")) {
       const client = new YoukuClient({});
       const r = await client.fetch_profile_with_seasons(u);
-      if (r.error) {
-        return c.json({
-          code: 1002,
-          msg: r.error.message,
-          data: null,
-        });
-      }
-      return c.json({
-        code: 0,
-        msg: "",
-        data: r.data,
-      });
+      return resp(r);
     }
-    //   const client1 = new MGTVClient({});
-    //   const client3 = new YoukuClient({});
-    //   const client4 = new QQVideoClient({});
     return c.json({
       code: 1001,
       msg: "未知类型的 url",
@@ -108,39 +91,18 @@ async function main() {
     });
   });
   server.post("/api/v1/season_profile", async (c) => {
+    const resp = simple_resp(c);
     const { id, platform } = await c.req.json();
     const u = decodeURIComponent(id);
     if (platform === "iqiyi") {
       const client = new IQiyiClient({});
       const r = await client.fetch_season_profile(u);
-      if (r.error) {
-        return c.json({
-          code: 1002,
-          msg: r.error.message,
-          data: null,
-        });
-      }
-      return c.json({
-        code: 0,
-        msg: "",
-        data: r.data,
-      });
+      return resp(r);
     }
     if (platform === "youku") {
       const client = new YoukuClient({});
       const r = await client.fetch_season_profile(u);
-      if (r.error) {
-        return c.json({
-          code: 1002,
-          msg: r.error.message,
-          data: null,
-        });
-      }
-      return c.json({
-        code: 0,
-        msg: "",
-        data: r.data,
-      });
+      return resp(r);
     }
     return c.json({
       code: 1001,
@@ -148,20 +110,33 @@ async function main() {
       data: null,
     });
   });
-  server.post("/api/v1/media_rank", async (c) => {
-    const client = new MaoyanClient();
-    const r = await client.fetch({ day: dayjs().format("YYYYMMDD") });
-    if (r.error) {
-      return c.json({
-        code: 101,
-        msg: r.error.message,
-        data: null,
-      });
+  server.get("/api/v1/media_rank", async (c) => {
+    const resp = simple_resp(c);
+    const { source, type } = await c.req.query();
+    if (Number(source) === MediaRankSource.Maoyan) {
+      if (type === "movie") {
+        return resp(Result.Err("暂不支持"));
+      }
+      const client = new MaoyanRankClient();
+      const r = await client.fetch({ day: dayjs().format("YYYYMMDD") });
+      return resp(r);
+    }
+    if (Number(source) === MediaRankSource.Douban) {
+      const client = new DoubanRankClient();
+      if (type === "movie") {
+        const r = await client.fetch_rank({ type });
+        return resp(r);
+      }
+      if (type === "tv") {
+        const r = await client.fetch_rank({ type });
+        return resp(r);
+      }
+      return resp(Result.Err("未知的 type"));
     }
     return c.json({
-      code: 0,
-      msg: "",
-      data: r.data,
+      code: 101,
+      msg: `未知的 source '${source}'`,
+      data: null,
     });
   });
 

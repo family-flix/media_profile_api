@@ -64,7 +64,7 @@ type RequestClient = {
   get: <T>(url: string, query?: Record<string, string | number | undefined>) => Promise<Result<T>>;
   post: <T>(url: string, body: Record<string, string | number | undefined>) => Promise<Result<T>>;
 };
-const request: RequestClient = {
+export const request: RequestClient = {
   get: async <T extends null>(endpoint: string, query?: Record<string, string | number | undefined>) => {
     try {
       const url = `${endpoint}${query ? "?" + query_stringify(query) : ""}`;

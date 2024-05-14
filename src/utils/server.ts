@@ -121,36 +121,30 @@ export async function compat_next<
   ];
 }
 export function simple_resp<T>(c: T) {
-  return {
-    s: (result: Result<unknown>) => {
-      // @ts-ignore
-      return c.json({ code: 0, msg: "", data: result.data });
-    },
-    e: (result: Result<unknown> | string | Error) => {
-      const data = (() => {
-        if (typeof result === "string") {
-          return {
-            code: DEFAULT_CODE,
-            msg: result,
-            data: null,
-          };
-        }
-        if (result instanceof Error) {
-          return {
-            code: DEFAULT_CODE,
-            msg: result.message,
-            data: null,
-          };
-        }
+  return (result: Result<unknown>) => {
+    const data = (() => {
+      if (typeof result === "string") {
         return {
-          code: result.code || DEFAULT_CODE,
-          msg: result.error === null ? "Unknown error?" : result.error.message,
-          data: result.data,
+          code: DEFAULT_CODE,
+          msg: result,
+          data: null,
         };
-      })();
-      // @ts-ignore
-      return c.json(data);
-    },
+      }
+      if (result instanceof Error) {
+        return {
+          code: DEFAULT_CODE,
+          msg: result.message,
+          data: null,
+        };
+      }
+      return {
+        code: result.code || DEFAULT_CODE,
+        msg: result.error === null ? "Unknown error?" : result.error.message,
+        data: result.data,
+      };
+    })();
+    // @ts-ignore
+    return c.json(data);
   };
 }
 

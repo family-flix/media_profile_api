@@ -1,3 +1,7 @@
+/**
+ * @file 猫眼
+ * https://piaofang.maoyan.com/dashboard/webHeatData
+ */
 import axios, { AxiosError } from "axios";
 import dayjs from "dayjs";
 import { md5 } from "js-md5";
@@ -104,7 +108,7 @@ function fetchHeatData(query: {
   });
 }
 
-export class MaoyanClient {
+export class MaoyanRankClient {
   build_query(values: { day: string; index: number; timestamp: number }) {
     const part = {
       method: "GET",

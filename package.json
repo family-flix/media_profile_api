@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "tsx watch ./src/index.ts --port 3201",
+    "dev": "tsx watch ./src/index.ts --port 9001",
     "start": "node dist/server.js",
     "build": "esbuild ./src/index.ts --platform=node --target=node12 --legal-comments=none --bundle --minify --outfile=dist/server.js"
   },

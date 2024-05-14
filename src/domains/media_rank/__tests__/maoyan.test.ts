@@ -3,7 +3,7 @@
  */
 import { describe, expect, test } from "vitest";
 
-import { MaoyanClient } from "../maoyan";
+import { MaoyanRankClient } from "../maoyan";
 import { md5 } from "js-md5";
 import { query_stringify } from "@/utils";
 
@@ -33,7 +33,7 @@ describe("猫眼客户端", () => {
   //     expect(r).toBe("fa89788a634964414a1e9d011ace34d0");
   //   });
   test("build_query", () => {
-    const client = new MaoyanClient();
+    const client = new MaoyanRankClient();
     const result = client.build_query({ day: "20240506", index: 251, timestamp: 1714983348684 });
     expect(result).toStrictEqual({
       timeStamp: 1714983348684,
@@ -46,7 +46,7 @@ describe("猫眼客户端", () => {
     });
   });
   test("build_query2", () => {
-    const client = new MaoyanClient();
+    const client = new MaoyanRankClient();
     const result = client.build_query({
       day: "20240506",
       timestamp: 1714983780169,
