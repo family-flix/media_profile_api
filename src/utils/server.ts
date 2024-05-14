@@ -61,7 +61,7 @@ export function response_error_factory(res: NextApiResponse) {
         }
         return {
           code: result.code || DEFAULT_CODE,
-          msg: result.error === null ? "Unknown error?" : result.error.message,
+          msg: result.error === null ? "Unknown error" : result.error.message,
           data: result.data,
         };
       })()
@@ -137,9 +137,16 @@ export function simple_resp<T>(c: T) {
           data: null,
         };
       }
+      if (result.error) {
+        return {
+          code: result.code || DEFAULT_CODE,
+          msg: result.error === null ? "Unknown error" : result.error.message,
+          data: null,
+        };
+      }
       return {
-        code: result.code || DEFAULT_CODE,
-        msg: result.error === null ? "Unknown error?" : result.error.message,
+        code: 0,
+        msg: "",
         data: result.data,
       };
     })();
