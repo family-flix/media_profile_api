@@ -67,7 +67,10 @@ async function main() {
     return c.json({
       code: 0,
       msg: "ok",
-      data: null,
+      data: {
+        port: app.env.port,
+        site: "media_profile_api",
+      },
     });
   });
   server.post("/api/v1/analysis", async (c) => {
