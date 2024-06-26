@@ -1,86 +1,141 @@
 /**
  * @file 豆瓣
  */
-import axios from "axios";
-import cheerio from "cheerio";
+import fs from 'fs';
+import path from 'path';
 
-import { Result } from "@/types";
+import axios from "axios";
+import dayjs from "dayjs";
+import uniq from "lodash/uniq";
+
+import { Application } from "@/domains/application";
+import { Result, Unpacked, UnpackedResult } from "@/types/index";
+import { DOUBAN_GENRE_TEXT_TO_VALUE, MediaTypes } from "@/constants";
+import { num_to_chinese } from "@/utils/index";
 
 import {
   fetch_episode_profile,
   fetch_season_profile,
-  fetch_tv_profile,
-  fetch_movie_profile,
+  fetch_media_profile,
   search_tv_in_douban,
   search_movie_in_tmdb,
 } from "./services";
+import { decrypt, DoubanSearchItem } from "./decrypt";
+import { parse_profile_page_html, split_name_and_original_name } from "./utils";
 
 export class DoubanClient {
   options: {
     token?: string;
   };
-  constructor(
-    options: Partial<{
-      /** tmdb api key */
-      token: string;
-    }>
-  ) {
-    const { token } = options;
+  debug = false;
+  app?: Application<any>;
+
+  constructor(options: Partial<{ debug?: boolean; token: string; app: Application<any> }>) {
+    const { debug, token, app } = options;
     this.options = {
       token,
     };
+    this.app = app;
+    if (debug !== undefined) {
+      this.debug = debug;
+    }
   }
-
   async search(keyword: string) {
-    const resp = await axios.get(`https://www.douban.com/search?q=${keyword}`);
-    const html = resp.data;
-    const $ = cheerio.load(html);
-    const $list = $(".result-list>.result");
+    const text = keyword;
+    if (!this.app) {
+      return Result.Err("缺少 app");
+    }
+    // console.log("[SERVICE]media_profile/douban/index - search", text);
+    const browser = await this.app.startBrowser();
+    const page = await browser.newPage();
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+    );
+    await page.goto(`https://search.douban.com/movie/subject_search?search_text=${text}`);
+    const html = await page.content();
+    // const resp = await axios.get<string>(`https://search.douban.com/movie/subject_search?search_text=${text}`);
+    // const html = resp.data;
+    if (this.debug) {
+      console.log(html);
+    }
+    const rr = (() => {
+      const re1 = /__DATA__ {0,1}= {0,1}"([^"]{1,})"/;
+      const result1 = html.match(re1);
+      if (result1) {
+        const content = result1[1];
+        const { items } = decrypt(content);
+        return Result.Ok(items);
+      }
+      const re2 = /__DATA__ {0,1}= {0,1}(\{[^;]{1,});/;
+      const result2 = html.match(re2);
+      if (result2) {
+        const content = result2[1];
+        const { items } = JSON.parse(content) as { items: DoubanSearchItem[] };
+        return Result.Ok(items);
+      }
+      return Result.Err("没有 __DATA__");
+    })();
+    if (rr.error) {
+      return Result.Err(rr.error.message);
+    }
+    const items = rr.data;
     const result = [];
-    for (let i = 0; i < $list.length; i += 1) {
+    for (let i = 0; i < items.length; i += 1) {
       (() => {
-        const $node = $($list[i]);
-        const html = $node.html();
-        if (!html) {
+        const { id, title, cover_url, abstract, abstract_2, rating, labels } = items[i];
+        if (!abstract) {
           return;
         }
-        const type_r = /<span>\[([^\]]{1,})\]<\/span>/;
+        // const { count, value, star_count } = rating;
+        const fields = abstract.split("/").map((t) => t.trim());
+        const genres = fields
+          .map((field) => {
+            const v = DOUBAN_GENRE_TEXT_TO_VALUE[field];
+            if (v) {
+              return {
+                value: v,
+                label: field,
+              };
+            }
+            return null;
+          })
+          .filter(Boolean) as {
+          value: number;
+          label: string;
+        }[];
         const type = (() => {
-          const r = html.match(type_r)?.[1];
-          if (!r) {
+          if (labels.length === 0) {
             return null;
           }
-          const MAP: Record<string, string> = {
-            电视剧: "season",
-            电影: "movie",
-          };
-          return MAP[r] ?? null;
+          const t = labels[0].text;
+          if (t === "剧集") {
+            return "tv";
+          }
+          return "movie";
         })();
-        if (!type) {
-          return;
+        let name = title
+          .replace(/\u200E/g, "")
+          .replace(/&lrm;/g, "")
+          .replace(/&#x200e;/g, "")
+          .replace(/ {2,}/g, " ");
+        const air_date = name.match(/\(([0-9]{4})\)/);
+        if (air_date) {
+          name = name.replace(air_date[0], "").trim();
         }
-        const name_r = /<a[^>]{1,}>([^<]{1,})</;
-        const poster_r = /<img src="([^"]{1,})"/;
-        const overview_r = /<p>([^<]{1,})</;
-        const info_r = /<span class="subject-cast">([^<]{1,})<\/span>/;
-        const info = (() => {
-          const m = html.match(info_r);
-          if (!m) {
-            return null;
-          }
-          const r = m[1].split("/").map((t) => t.trim());
-          return {
-            air_date: r[r.length - 1],
-          };
-        })();
-        const vote_average_r = /<span class="rating_nums">([^<]{1,})<\/span>/;
+        if (this.debug) {
+          console.log("name", name);
+        }
+        const { name: n, origin_name } = split_name_and_original_name(name, { debug: this.debug });
         const payload = {
-          name: html.match(name_r)?.[1] ?? null,
-          overview: html.match(overview_r)?.[1] ?? null,
-          poster_path: html.match(poster_r)?.[1] ?? null,
-          air_date: info?.air_date ?? null,
-          vote_average: html.match(vote_average_r)?.[1],
+          id,
+          name: n.trim().replace(/ {2,}/g, " "),
+          origin_name,
+          overview: null,
+          poster_path: cover_url,
+          air_date: air_date ? air_date[1] : null,
+          vote_average: rating?.value || null,
           type,
+          genres,
         };
         result.push(payload);
       })();
@@ -89,7 +144,107 @@ export class DoubanClient {
       list: result,
     });
   }
-
+  /** 在搜索结果列表中，找到最匹配的结果 */
+  match_exact_media(
+    media: { type: MediaTypes; name: string; original_name: string | null; order: number; air_date: string | null },
+    list: UnpackedResult<Unpacked<ReturnType<typeof this.search>>>["list"]
+  ) {
+    if (this.debug) {
+      console.log("match exact media");
+      console.log(media);
+    }
+    const { type, name, original_name, order, air_date } = media;
+    if (list.length === 0) {
+      return Result.Err("没有列表数据");
+    }
+    if (this.debug) {
+      console.log(list);
+    }
+    const matched = (() => {
+      const names_processed = [name, name.replace("：", "·")];
+      if (type === MediaTypes.Movie) {
+        const maybe_chinese_names = names_processed;
+        const maybe_original_names = [original_name];
+        const maybe_names = uniq([
+          ...maybe_chinese_names,
+          ...maybe_original_names,
+          ...maybe_chinese_names.flatMap((item1) => maybe_original_names.map((item2) => [item1, item2].join(" "))),
+        ]);
+        for (let i = 0; i < maybe_names.length; i += 1) {
+          const maybe_name = maybe_names[i];
+          const matched = list.find((media) => {
+            return maybe_name === media.name;
+          });
+          if (this.debug) {
+            console.log(`${i + 1}、`, maybe_name, matched);
+          }
+          if (matched) {
+            if (air_date) {
+              if (String(dayjs(air_date).year()) === String(dayjs(matched.air_date).year())) {
+                return matched;
+              }
+              return null;
+            }
+            return matched;
+          }
+        }
+        return null;
+      }
+      if (type === MediaTypes.Season) {
+        const maybe_season_num = [
+          order === 1 ? "" : order,
+          order,
+          ` 第${order}季`,
+          ` 第${num_to_chinese(order)}季`,
+          ` Season ${order}`,
+        ];
+        const maybe_chinese_names = maybe_season_num
+          .map((n) => {
+            return names_processed.map((nn) => {
+              return [nn, n].filter(Boolean).join("");
+            });
+          })
+          .reduce((prev, name) => {
+            return [...prev, ...name];
+          }, [] as string[]);
+        const maybe_original_names = original_name
+          ? maybe_season_num.map((n) => {
+              return [original_name, n].filter(Boolean).join("");
+            })
+          : [];
+        const maybe_names = uniq([
+          ...maybe_chinese_names,
+          ...maybe_original_names,
+          ...maybe_chinese_names.flatMap((item1) => maybe_original_names.map((item2) => [item1, item2].join(" "))),
+        ]);
+        for (let i = 0; i < maybe_names.length; i += 1) {
+          const maybe_name = maybe_names[i];
+          const matched = list.find((media) => {
+            return maybe_name === media.name;
+          });
+          if (this.debug) {
+            console.log(`${i + 1}、`, maybe_name, matched);
+          }
+          if (matched) {
+            if (air_date) {
+              if (String(dayjs(air_date).year()) === String(dayjs(matched.air_date).year())) {
+                return matched;
+              }
+            }
+            if (this.debug) {
+              console.log(`${i + 1}、`, maybe_name, "匹配了名称但不匹配发布时间");
+            }
+          }
+        }
+        return null;
+      }
+      return null;
+    })();
+    if (!matched) {
+      return Result.Err("没有完美匹配结果");
+    }
+    return Result.Ok(matched);
+  }
   /** 根据关键字搜索电视剧 */
   async search_tv(keyword: string, extra: Partial<{ page: number; language: "zh-CN" | "en-US" }> = {}) {
     const { token } = this.options;
@@ -102,7 +257,7 @@ export class DoubanClient {
   /** 获取电视剧详情 */
   async fetch_tv_profile(id: number | string) {
     const { token } = this.options;
-    const result = await fetch_tv_profile(Number(id), {
+    const result = await fetch_media_profile(Number(id), {
       api_key: token,
     });
     return result;
@@ -127,25 +282,6 @@ export class DoubanClient {
       return Result.Err("没有匹配的结果");
     }
     return Result.Ok(r.data);
-  }
-  /** 获取季详情 */
-  async fetch_partial_season_profile(body: { tv_id: number; season_number: string | number }) {
-    const { tv_id, season_number } = body;
-    const { token } = this.options;
-    const r = await fetch_tv_profile(tv_id, {
-      api_key: token,
-    });
-    if (r.error) {
-      return Result.Err(r.error);
-    }
-    const { seasons } = r.data;
-    const matched_season = seasons.find((s) => {
-      return s.season_number === season_number;
-    });
-    if (!matched_season) {
-      return Result.Err("没有匹配的结果");
-    }
-    return Result.Ok(matched_season);
   }
   /** 获取剧集详情 */
   async fetch_episode_profile(body: {
@@ -179,157 +315,36 @@ export class DoubanClient {
   /** 获取电视剧详情 */
   async fetch_movie_profile(id: number | string) {
     const { token } = this.options;
-    const result = await fetch_movie_profile(Number(id), {
+    const result = await fetch_media_profile(Number(id), {
       // api_key: token,
     });
     return result;
   }
+  async fetch_media_profile(id: number | string) {
+    if (id === undefined) {
+      return Result.Err("请传入电视剧 id");
+    }
+    if (!this.app) {
+      return Result.Err("缺少 app");
+    }
+    const browser = await this.app.startBrowser();
+    const page = await browser.newPage();
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+    );
+    await page.goto(`https://movie.douban.com/subject/${id}/`);
+    const html = await page.content();
+    // const endpoint = `https://movie.douban.com/subject/${id}/`;
+    // const resp = await axios.get<string>(endpoint, {});
+    // const html = resp.data;
+    fs.writeFileSync(path.resolve(__dirname, 'profile.html'), html);
+    const r = parse_profile_page_html(html);
+    if (r.error) {
+      return r;
+    }
+    return Result.Ok({
+      id,
+      ...r.data,
+    });
+  }
 }
-interface TMDBTVSeason {
-  id: number;
-  /** 名称 一般是「第 n 季」这样，或者「特别篇」、「番外篇」这样，没有特别的意义 */
-  name: string;
-  /** 海报 */
-  poster_path: string;
-  /** 简介 */
-  overview: string;
-  /** 总集数 */
-  episode_count: number;
-  /** 首播日期 */
-  air_date: string;
-  /** 属于第几季 */
-  season_number: number;
-}
-interface TMDBTVEpisode {
-  id: number;
-  /** 名称 一般是「第 n 季」这样，或者「特别篇」、「番外篇」这样，没有特别的意义 */
-  name: string;
-  /** 简介 */
-  overview?: string;
-  /** 海报 */
-  poster_path?: string;
-  /** 第几集 */
-  episode_number: number;
-  /** 首播日期 */
-  air_date?: string;
-  /** 总集数 */
-  episode_count?: number;
-  /** 第几季 */
-  season_number: number;
-}
-interface TMDBTVProfile {
-  id: number;
-  name: string;
-  /** 概述 */
-  overview: string;
-  /** 原产地名称 */
-  original_name: string;
-  /** 原产地语义 */
-  original_language: string;
-  poster_path?: string;
-  backdrop_path?: string;
-  first_air_date: string;
-  /** 总季数 */
-  number_of_seasons: number;
-  /** 总集数 */
-  number_of_episodes: number;
-  /** 下一集 */
-  next_episode_to_air?: TMDBTVEpisode;
-  /** 是否还在连载  */
-  in_production: boolean;
-  seasons: TMDBTVSeason[];
-}
-// class TV {
-//   constructor(partial: { id: number }) {}
-//   async detail() {
-//     const endpoint = "";
-//     request.get();
-//   }
-// }
-
-// /**
-//  * ----------------------------------------------------------------
-//  * SEARCH TV
-//  * ----------------------------------------------------------------
-//  */
-// #[derive(Serialize, Deserialize, Debug)]
-// pub struct TMDBResult {
-//   id: i32,
-//   name: Option<String>,
-//   media_type: Option<String>,
-//   backdrop_path: Option<String>,
-//   poster_path: Option<String>,
-//   first_air_date: Option<String>,
-//   genre_ids: Option<Vec<i32>>,
-//   origin_country: Option<Vec<String>>,
-//   original_language: Option<String>,
-//   original_name: Option<String>,
-//   overview: Option<String>,
-//   popularity: Option<f32>,
-//   vote_average: Option<f32>,
-//   vote_count: Option<i32>,
-//   adult: Option<bool>,
-// }
-// impl TMDBResult {
-//   pub fn modify(&mut self) {
-//     match &self.backdrop_path {
-//       None => {}
-//       Some(original_path) => {
-//         let img = format!(
-//           "{}{}",
-//           "https://www.themoviedb.org/t/p/w1920_and_h800_multi_faces",
-//           original_path.as_str(),
-//         );
-//         self.backdrop_path = Some(img);
-//       }
-//     }
-//     match &self.poster_path {
-//       None => {}
-//       Some(original_path) => {
-//         let img = format!(
-//           "{}{}",
-//           "https://image.tmdb.org/t/p/w600_and_h900_bestv2",
-//           original_path.as_str(),
-//         );
-//         self.poster_path = Some(img);
-//       }
-//     }
-//   }
-// }
-
-// #[derive(Serialize, Deserialize, Debug)]
-// pub struct TMDBSearchResponse {
-//   page: i32,
-//   total_pages: i32,
-//   total_results: i32,
-//   results: Vec<TMDBResult>,
-// }
-// pub async fn search_tv(keyword: &str) -> Result<TMDBSearchResponse, Box<dyn Error>> {
-//   println!("[] search_tv {}", keyword);
-//   let host = "https://api.themoviedb.org/3";
-//   let url = format!("{}/{}/{}", host, "search", "tv");
-//   let tmdb_api_key = "c2e5d34999e27f8e0ef18421aa5dec38";
-//   let params = [
-//     ("api_key", tmdb_api_key),
-//     ("language", "zh-CN"),
-//     ("query", keyword),
-//     ("page", "1"),
-//     ("include_adult", "false"),
-//   ];
-//   let client = reqwest::Client::builder().build().unwrap();
-//   let resp = client.get(url).query(&params).send().await?;
-//   let mut data = resp.json::<TMDBSearchResponse>().await?;
-
-//   println!("[] search_tv success and result is {:?}", data);
-
-//   for res in data.results.iter_mut() {
-//     res.modify();
-//   }
-
-//   Ok(data)
-// }
-
-// const TMDB_TOKEN = process.env.TMDB_TOKEN;
-// export const tmdb = new TMDB_Client({
-//   token: TMDB_TOKEN,
-// });

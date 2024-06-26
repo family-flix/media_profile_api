@@ -15,13 +15,11 @@ export const store = app.store;
 
 export type TVProfile = series;
 export type TVSeasonProfile = season_profile;
-
 export type BaseApiResp<T> = {
   code: number;
   msg: string;
   data: T;
 };
-
 export type ListResponse<T> = {
   total: number;
   page: number;

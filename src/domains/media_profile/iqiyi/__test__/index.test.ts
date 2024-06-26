@@ -39,6 +39,7 @@ describe("dayjs", () => {
       scale: 200,
       // sign=FE56903F2C9BD72EC4E65729442139AB
     };
+    // @ts-ignore
     const sign = get_sign(obj);
     expect(sign).toBe("FE56903F2C9BD72EC4E65729442139AB");
   });

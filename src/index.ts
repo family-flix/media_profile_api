@@ -7,6 +7,7 @@ import { app } from "./store/index";
 import { static_serve } from "./middlewares/static";
 import { YoukuClient } from "./domains/media_profile/youku";
 import { IQiyiClient } from "./domains/media_profile/iqiyi";
+import { DoubanClient } from "./domains/media_profile/douban";
 import { MaoyanRankClient } from "./domains/media_rank/maoyan/index";
 import { DoubanRankClient } from "./domains/media_rank/douban";
 import { brand } from "./utils/text";
@@ -80,12 +81,12 @@ async function main() {
     if (u.startsWith("https://www.iqiyi.com/")) {
       const client = new IQiyiClient({});
       const r = await client.fetch_profile_with_seasons(u);
-      return resp(r);
+      return resp.s(r);
     }
     if (u.startsWith("https://v.youku.com/")) {
       const client = new YoukuClient({});
       const r = await client.fetch_profile_with_seasons(u);
-      return resp(r);
+      return resp.s(r);
     }
     return c.json({
       code: 1001,
@@ -100,12 +101,12 @@ async function main() {
     if (platform === "iqiyi") {
       const client = new IQiyiClient({});
       const r = await client.fetch_season_profile(u);
-      return resp(r);
+      return resp.s(r);
     }
     if (platform === "youku") {
       const client = new YoukuClient({});
       const r = await client.fetch_season_profile(u);
-      return resp(r);
+      return resp.s(r);
     }
     return c.json({
       code: 1001,
@@ -113,28 +114,62 @@ async function main() {
       data: null,
     });
   });
+  server.get("/api/v1/douban/search", async (c) => {
+    const resp = simple_resp(c);
+    const { keyword } = await c.req.query();
+    if (!keyword) {
+      return resp.e(Result.Err("缺少 keyword 参数"));
+    }
+    const client = new DoubanClient({ app });
+    const r = await client.search(keyword);
+    if (r.error) {
+      return resp.e(r);
+    }
+    return c.json({
+      code: 0,
+      msg: "",
+      data: r.data,
+    });
+  });
+  server.get("/api/v1/douban/profile", async (c) => {
+    const resp = simple_resp(c);
+    const { id } = await c.req.query();
+    if (!id) {
+      return resp.e(Result.Err("缺少 keyword 参数"));
+    }
+    const client = new DoubanClient({ app });
+    const r = await client.fetch_media_profile(id);
+    if (r.error) {
+      return resp.e(r);
+    }
+    return c.json({
+      code: 0,
+      msg: "",
+      data: r.data,
+    });
+  });
   server.get("/api/v1/media_rank", async (c) => {
     const resp = simple_resp(c);
     const { source, type } = await c.req.query();
     if (Number(source) === MediaRankSource.Maoyan) {
       if (type === "movie") {
-        return resp(Result.Err("暂不支持"));
+        return resp.e(Result.Err("暂不支持"));
       }
       const client = new MaoyanRankClient();
       const r = await client.fetch({ day: dayjs().format("YYYYMMDD") });
-      return resp(r);
+      return resp.s(r);
     }
     if (Number(source) === MediaRankSource.Douban) {
       const client = new DoubanRankClient();
       if (type === "movie") {
         const r = await client.fetch_rank({ type });
-        return resp(r);
+        return resp.s(r);
       }
       if (type === "tv") {
         const r = await client.fetch_rank({ type });
-        return resp(r);
+        return resp.s(r);
       }
-      return resp(Result.Err("未知的 type"));
+      return resp.e(Result.Err("未知的 type"));
     }
     return c.json({
       code: 101,

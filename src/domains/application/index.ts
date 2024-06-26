@@ -1,11 +1,24 @@
 import path from "path";
 
+import puppeteer, { Browser } from "puppeteer";
 import { PrismaClient } from "@prisma/client";
 
 import { DatabaseStore } from "@/domains/store";
 import { ensure } from "@/utils/fs";
 
 let cached: null | DatabaseStore = null;
+const browser_options = (() => {
+  // if (headless) {
+  //   return {
+  //     headless: true,
+  //   };
+  // }
+  return {
+    // executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    // headless: false,
+    headless: true,
+  };
+})();
 
 export class Application<T extends { root_path: string; env?: Record<string, string>; args?: Record<string, any> }> {
   root_path: string;
@@ -23,6 +36,7 @@ export class Application<T extends { root_path: string; env?: Record<string, str
   }[] = [];
 
   store: DatabaseStore;
+  browser: Browser | null = null;
 
   constructor(options: T) {
     const { root_path, env = {}, args = {} } = options;
@@ -61,7 +75,28 @@ export class Application<T extends { root_path: string; env?: Record<string, str
       );
       cached = this.store;
     })();
+    (async () => {
+      const browser = await puppeteer.launch(browser_options);
+      this.browser = browser;
+    })();
   }
+  /**
+   * 启动一个浏览器
+   */
+  startBrowser = async () => {
+    if (this.browser) {
+      return this.browser;
+    }
+    const browser = await puppeteer.launch(browser_options);
+    this.browser = browser;
+    return this.browser;
+  };
+  closeBrowser = () => {
+    if (!this.browser) {
+      return;
+    }
+    this.browser.close();
+  };
 
   startInterval<T extends Function>(handler: T, delay: number) {
     (() => {

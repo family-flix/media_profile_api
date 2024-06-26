@@ -1,3 +1,234 @@
+// import { Statistics } from "@/domains/store/types";
+
+export const __VERSION__ = "2.3.0";
+
+export enum FileType {
+  File = 1,
+  Folder = 2,
+  Unknown = 3,
+}
+
+export enum ReportTypes {
+  /** 电视剧问题 */
+  TV,
+  /** 电影问题 */
+  Movie,
+  /** 问题与建议 */
+  Question,
+  /** 想看什么剧 */
+  Want,
+}
+
+export enum CollectionStatus {
+  Draft = 1,
+  Published = 2,
+  Hidden = 3,
+}
+
+export enum MediaProfileSourceTypes {
+  TMDB = 1,
+  /** 自动识别出的 花絮、彩蛋等 */
+  Other = 2,
+  /** 手动编辑 */
+  Manual = 3,
+}
+
+export enum MediaTypes {
+  Season = 1,
+  Movie = 2,
+}
+
+export enum ResourceSyncTaskStatus {
+  WaitLinkFolder = 1,
+  WaitSetProfile = 2,
+  WorkInProgress = 3,
+  Completed = 4,
+}
+export enum MemberNotifyTypes {
+  Common = 1,
+}
+
+/** 影片分辨率 */
+export enum MediaResolutionTypes {
+  /** 标清 */
+  LD = "LD",
+  /** 普清 */
+  SD = "SD",
+  /** 高清 */
+  HD = "HD",
+  /** 超高清 */
+  FHD = "FHD",
+  QHD = "QHD",
+}
+/** 影片分辨率中文描述 */
+export const MediaResolutionTypeTexts = {
+  [MediaResolutionTypes.LD]: "标清",
+  [MediaResolutionTypes.SD]: "普清",
+  [MediaResolutionTypes.HD]: "高清",
+  [MediaResolutionTypes.FHD]: "4K",
+  [MediaResolutionTypes.QHD]: "QHD",
+};
+
+export enum SubtitleFileTypes {
+  /** 上传到服务器本地的 */
+  LocalFile = 1,
+  /** 在阿里云盘的 */
+  AliyundriveFile = 2,
+  /** 内挂字幕 */
+  MediaInnerFile = 3,
+}
+
+export enum CollectionTypes {
+  /** 手动创建 */
+  Manually = 1,
+  /** 每日更新 */
+  DailyUpdate = 2,
+  /** 每日更新草稿 */
+  DailyUpdateDraft = 3,
+  /** 每日更新存档 */
+  DailyUpdateArchive = 4,
+  /** 手动创建的排行榜 */
+  ManuallyRank = 5,
+  /** 影视剧排行榜 */
+  ThirdPlatformRank = 6,
+  /** 豆瓣电视剧排行 */
+  DoubanSeasonRank = 7,
+  /** 豆瓣电影排行 */
+  DoubanMovieRank = 8,
+  /** 猫眼电视剧排行 */
+  MaoyaoSeasonRank = 9,
+  /** 猫眼电影排行 */
+  MaoyaoMovieRank = 10,
+}
+
+export enum MediaErrorTypes {
+  Unknown = 0,
+  Season = 1,
+  Movie = 2,
+  Episode = 3,
+  TV = 5,
+  TVProfile = 6,
+  SeasonProfile = 7,
+  MovieProfile = 8,
+  EpisodeProfile = 9,
+}
+
+export enum MediaGenresTypes {
+  /** 纪录片 */
+  Documentary = 1,
+  /** 传记 */
+  Biography = 2,
+  /** 犯罪 */
+  Crime = 3,
+  /** 历史 */
+  History = 4,
+  /** 动作 */
+  Action = 5,
+  /** 情色 */
+  Adult = 6,
+  /** 歌舞 */
+  Musical = 7,
+  /** 儿童 */
+  Children = 8,
+  /** 悬疑 */
+  Suspense = 10,
+  /** 剧情 */
+  Plot = 11,
+  /** 灾难 */
+  Disaster = 12,
+  /** 爱情 */
+  Romance = 13,
+  /** 音乐 */
+  Music = 14,
+  /** 冒险 */
+  Adventure = 15,
+  /** 奇幻 */
+  Fantasy = 16,
+  /** 科幻 */
+  ScienceFiction = 17,
+  /** 运动 */
+  Sports = 18,
+  /** 惊悚 */
+  Thriller = 19,
+  /** 恐怖 */
+  Horror = 20,
+  /** 战争 */
+  War = 22,
+  /** 短片 */
+  ShortFilm = 23,
+  /** 喜剧 */
+  Comedy = 24,
+  /** 动画 */
+  Animation = 25,
+  /** 西部 */
+  Western = 27,
+  /** 家庭 */
+  Family = 28,
+  /** 武侠 */
+  Wuxia = 29,
+  /** 古装 */
+  CostumeDrama = 30,
+  /** 黑色电影 */
+  FilmNoir = 31,
+}
+
+export const DOUBAN_GENRE_TEXT_TO_VALUE: Record<string, MediaGenresTypes> = {
+  纪录片: MediaGenresTypes.Documentary,
+  传记: MediaGenresTypes.Biography,
+  犯罪: MediaGenresTypes.Crime,
+  历史: MediaGenresTypes.History,
+  动作: MediaGenresTypes.Action,
+  情色: MediaGenresTypes.Adult,
+  歌舞: MediaGenresTypes.Musical,
+  儿童: MediaGenresTypes.Children,
+  悬疑: MediaGenresTypes.Suspense,
+  剧情: MediaGenresTypes.Plot,
+  灾难: MediaGenresTypes.Disaster,
+  爱情: MediaGenresTypes.Romance,
+  音乐: MediaGenresTypes.Music,
+  冒险: MediaGenresTypes.Adventure,
+  奇幻: MediaGenresTypes.Fantasy,
+  科幻: MediaGenresTypes.ScienceFiction,
+  运动: MediaGenresTypes.Sports,
+  惊悚: MediaGenresTypes.Thriller,
+  恐怖: MediaGenresTypes.Horror,
+  战争: MediaGenresTypes.War,
+  短片: MediaGenresTypes.ShortFilm,
+  喜剧: MediaGenresTypes.Comedy,
+  动画: MediaGenresTypes.Animation,
+  西部: MediaGenresTypes.Western,
+  家庭: MediaGenresTypes.Family,
+  武侠: MediaGenresTypes.Wuxia,
+  古装: MediaGenresTypes.CostumeDrama,
+  黑色电影: MediaGenresTypes.FilmNoir,
+};
+export const TMDB_GENRES_MAP_TO_DOUBAN = {
+  /** 动画 */
+  16: MediaGenresTypes.Animation,
+  /** 剧情 */
+  18: MediaGenresTypes.Plot,
+  /** 恐怖 */
+  27: MediaGenresTypes.Horror,
+  /** 动作 */
+  28: MediaGenresTypes.Action,
+  /** 喜剧 */
+  35: MediaGenresTypes.Comedy,
+  /** 惊悚 */
+  53: MediaGenresTypes.Thriller,
+  /** 科幻 */
+  878: MediaGenresTypes.ScienceFiction,
+  /** 悬疑 */
+  9648: MediaGenresTypes.Suspense,
+  /** 音乐 */
+  10402: MediaGenresTypes.Music,
+  /** 爱情 */
+  10749: MediaGenresTypes.Romance,
+  /** 家庭 */
+  10751: MediaGenresTypes.Family,
+  10759: MediaGenresTypes.Action,
+  /** 科幻&奇幻(Sci-Fi & Fantasy) */
+  10765: MediaGenresTypes.ScienceFiction,
+};
 /**
  * 影视剧产地，不同描述映射到同一个值
  */
@@ -39,9 +270,11 @@ export const MEDIA_SOURCE_MAP: Record<string, string> = {
  * 原产地
  * @doc https://www.iso.org/standard/63545.html
  */
-export enum MediaSource {
-  US = "US", // 美国 (United States)
-  CN = "CN", // 中国 (China)
+export enum MediaOriginCountries {
+  /**  // 美国 (United States) */
+  US = "US",
+  /**  // 中国 (China) */
+  CN = "CN",
   TW = "TW", // 中国台湾 (Taiwan)
   HK = "HK", // 中国香港 (Hong Kong)
   JP = "JP", // 日本 (Japan)
@@ -75,40 +308,40 @@ export enum MediaSource {
   BD = "BD", // 孟加拉国 (Bangladesh)
 }
 
-export const TVSourceTexts: Record<MediaSource, string> = {
-  [MediaSource.CN]: "国产剧",
-  [MediaSource.TW]: "台剧",
-  [MediaSource.HK]: "港剧",
-  [MediaSource.JP]: "日剧",
-  [MediaSource.KR]: "韩剧",
-  [MediaSource.US]: "美剧",
-  [MediaSource.GB]: "英剧",
-  [MediaSource.FR]: "法国",
-  [MediaSource.IT]: "意大利",
-  [MediaSource.BR]: "巴西",
-  [MediaSource.BE]: "比利时",
-  [MediaSource.DE]: "德国",
-  [MediaSource.CA]: "加拿大",
-  [MediaSource.AU]: "澳大利亚",
-  [MediaSource.IN]: "印度",
-  [MediaSource.RU]: "俄罗斯",
-  [MediaSource.ES]: "西班牙",
-  [MediaSource.MX]: "墨西哥",
-  [MediaSource.ID]: "印度尼西亚",
-  [MediaSource.TR]: "土耳其",
-  [MediaSource.SA]: "沙特阿拉伯",
-  [MediaSource.ZA]: "南非",
-  [MediaSource.AR]: "阿根廷",
-  [MediaSource.TH]: "泰国",
-  [MediaSource.EG]: "埃及",
-  [MediaSource.NL]: "荷兰",
-  [MediaSource.CH]: "瑞士",
-  [MediaSource.SE]: "瑞典",
-  [MediaSource.PL]: "波兰",
-  [MediaSource.PK]: "巴基斯坦",
-  [MediaSource.NG]: "尼日利亚",
-  [MediaSource.MY]: "马来西亚",
-  [MediaSource.BD]: "孟加拉国",
+export const SeasonMediaOriginCountryTextMap: Record<MediaOriginCountries, string> = {
+  [MediaOriginCountries.CN]: "国产剧",
+  [MediaOriginCountries.TW]: "台剧",
+  [MediaOriginCountries.HK]: "港剧",
+  [MediaOriginCountries.JP]: "日剧",
+  [MediaOriginCountries.KR]: "韩剧",
+  [MediaOriginCountries.US]: "美剧",
+  [MediaOriginCountries.GB]: "英剧",
+  [MediaOriginCountries.FR]: "法国",
+  [MediaOriginCountries.IT]: "意大利",
+  [MediaOriginCountries.BR]: "巴西",
+  [MediaOriginCountries.BE]: "比利时",
+  [MediaOriginCountries.DE]: "德国",
+  [MediaOriginCountries.CA]: "加拿大",
+  [MediaOriginCountries.AU]: "澳大利亚",
+  [MediaOriginCountries.IN]: "印度",
+  [MediaOriginCountries.RU]: "俄罗斯",
+  [MediaOriginCountries.ES]: "西班牙",
+  [MediaOriginCountries.MX]: "墨西哥",
+  [MediaOriginCountries.ID]: "印度尼西亚",
+  [MediaOriginCountries.TR]: "土耳其",
+  [MediaOriginCountries.SA]: "沙特阿拉伯",
+  [MediaOriginCountries.ZA]: "南非",
+  [MediaOriginCountries.AR]: "阿根廷",
+  [MediaOriginCountries.TH]: "泰国",
+  [MediaOriginCountries.EG]: "埃及",
+  [MediaOriginCountries.NL]: "荷兰",
+  [MediaOriginCountries.CH]: "瑞士",
+  [MediaOriginCountries.SE]: "瑞典",
+  [MediaOriginCountries.PL]: "波兰",
+  [MediaOriginCountries.PK]: "巴基斯坦",
+  [MediaOriginCountries.NG]: "尼日利亚",
+  [MediaOriginCountries.MY]: "马来西亚",
+  [MediaOriginCountries.BD]: "孟加拉国",
 };
 export const TVGenres = [
   "动作冒险",
@@ -153,40 +386,40 @@ export const TVGenresOptions = TVGenres.map((text) => {
   };
 });
 
-export const MovieSourceTexts: Record<MediaSource, string> = {
-  [MediaSource.CN]: "中国大陆",
-  [MediaSource.TW]: "中国台湾",
-  [MediaSource.HK]: "中国香港",
-  [MediaSource.JP]: "日本",
-  [MediaSource.KR]: "韩国",
-  [MediaSource.US]: "美国",
-  [MediaSource.GB]: "英国",
-  [MediaSource.FR]: "法国",
-  [MediaSource.IT]: "意大利",
-  [MediaSource.BR]: "巴西",
-  [MediaSource.DE]: "德国",
-  [MediaSource.CA]: "加拿大",
-  [MediaSource.AU]: "澳大利亚",
-  [MediaSource.IN]: "印度",
-  [MediaSource.RU]: "俄罗斯",
-  [MediaSource.BE]: "比利时",
-  [MediaSource.ES]: "西班牙",
-  [MediaSource.MX]: "墨西哥",
-  [MediaSource.ID]: "印度尼西亚",
-  [MediaSource.TR]: "土耳其",
-  [MediaSource.SA]: "沙特阿拉伯",
-  [MediaSource.ZA]: "南非",
-  [MediaSource.AR]: "阿根廷",
-  [MediaSource.TH]: "泰国",
-  [MediaSource.EG]: "埃及",
-  [MediaSource.NL]: "荷兰",
-  [MediaSource.CH]: "瑞士",
-  [MediaSource.SE]: "瑞典",
-  [MediaSource.PL]: "波兰",
-  [MediaSource.PK]: "巴基斯坦",
-  [MediaSource.NG]: "尼日利亚",
-  [MediaSource.MY]: "马来西亚",
-  [MediaSource.BD]: "孟加拉国",
+export const MovieMediaOriginCountryTextMap: Record<MediaOriginCountries, string> = {
+  [MediaOriginCountries.CN]: "中国大陆",
+  [MediaOriginCountries.TW]: "中国台湾",
+  [MediaOriginCountries.HK]: "中国香港",
+  [MediaOriginCountries.JP]: "日本",
+  [MediaOriginCountries.KR]: "韩国",
+  [MediaOriginCountries.US]: "美国",
+  [MediaOriginCountries.GB]: "英国",
+  [MediaOriginCountries.FR]: "法国",
+  [MediaOriginCountries.IT]: "意大利",
+  [MediaOriginCountries.BR]: "巴西",
+  [MediaOriginCountries.DE]: "德国",
+  [MediaOriginCountries.CA]: "加拿大",
+  [MediaOriginCountries.AU]: "澳大利亚",
+  [MediaOriginCountries.IN]: "印度",
+  [MediaOriginCountries.RU]: "俄罗斯",
+  [MediaOriginCountries.BE]: "比利时",
+  [MediaOriginCountries.ES]: "西班牙",
+  [MediaOriginCountries.MX]: "墨西哥",
+  [MediaOriginCountries.ID]: "印度尼西亚",
+  [MediaOriginCountries.TR]: "土耳其",
+  [MediaOriginCountries.SA]: "沙特阿拉伯",
+  [MediaOriginCountries.ZA]: "南非",
+  [MediaOriginCountries.AR]: "阿根廷",
+  [MediaOriginCountries.TH]: "泰国",
+  [MediaOriginCountries.EG]: "埃及",
+  [MediaOriginCountries.NL]: "荷兰",
+  [MediaOriginCountries.CH]: "瑞士",
+  [MediaOriginCountries.SE]: "瑞典",
+  [MediaOriginCountries.PL]: "波兰",
+  [MediaOriginCountries.PK]: "巴基斯坦",
+  [MediaOriginCountries.NG]: "尼日利亚",
+  [MediaOriginCountries.MY]: "马来西亚",
+  [MediaOriginCountries.BD]: "孟加拉国",
 };
 export const MovieGenres = [
   "动作",
@@ -225,3 +458,42 @@ export const MovieGenresOptions = MovieGenres.map((text) => {
     value: text,
   };
 });
+
+export const SubtitleLanguageMap = {
+  chi: [MediaOriginCountries.CN],
+  eng: [MediaOriginCountries.US],
+  jpn: [MediaOriginCountries.JP],
+};
+
+// export const DEFAULT_STATS: Statistics = {
+//   drive_count: 0,
+//   drive_total_size_count: 0,
+//   drive_used_size_count: 0,
+//   sync_task_count: 0,
+//   movie_count: 0,
+//   season_count: 0,
+//   episode_count: 0,
+//   unknown_media_count: 0,
+//   invalid_season_count: 0,
+//   invalid_movie_count: 0,
+//   invalid_sync_task_count: 0,
+//   report_count: 0,
+//   media_request_count: 0,
+//   new_file_count_today: 0,
+//   file_size_count_today: 0,
+//   updated_at: null,
+// };
+
+export enum AuthenticationProviders {
+  /** 微信小程序 */
+  Weapp = "weapp",
+  /** 邮箱、密码 凭证 */
+  Credential = "credential",
+}
+
+export enum AuthCodeStep {
+  Pending = 1,
+  Scanned = 2,
+  Confirmed = 3,
+  Expired = 4,
+}

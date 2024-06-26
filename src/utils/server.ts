@@ -61,7 +61,7 @@ export function response_error_factory(res: NextApiResponse) {
         }
         return {
           code: result.code || DEFAULT_CODE,
-          msg: result.error === null ? "Unknown error" : result.error.message,
+          msg: result.error === null ? "Unknown error?" : result.error.message,
           data: result.data,
         };
       })()
@@ -78,6 +78,7 @@ export async function compat_next<
       parseBody(arg: { all: boolean }): Promise<unknown>;
     };
     json(data: any): void;
+    body(data: any): void;
   }
 >(
   c: T
@@ -87,6 +88,7 @@ export async function compat_next<
     {
       status(code: number): {
         json(data: any): BaseApiResp<unknown>;
+        body(data: any): BaseApiResp<unknown>;
       };
     }
   ]
@@ -97,7 +99,7 @@ export async function compat_next<
     if (c.req.method !== "POST") {
       return {};
     }
-    if (headers["content-type"].includes("multipart/form-data")) {
+    if (headers["content-type"] && headers["content-type"].includes("multipart/form-data")) {
       return c.req.parseBody({ all: true });
     }
     return c.req.json();
@@ -115,43 +117,52 @@ export async function compat_next<
           json(data: any) {
             return c.json(data);
           },
+          body(data: unknown) {
+            return c.body(data);
+          },
         };
       },
     },
   ];
 }
 export function simple_resp<T>(c: T) {
-  return (result: Result<unknown>) => {
-    const data = (() => {
-      if (typeof result === "string") {
+  return {
+    s: (result: Result<unknown>) => {
+      // @ts-ignore
+      return c.json({ code: 0, msg: "", data: result.data });
+    },
+    e: (result: Result<unknown> | string | Error) => {
+      const data = (() => {
+        if (typeof result === "string") {
+          return {
+            code: DEFAULT_CODE,
+            msg: result,
+            data: null,
+          };
+        }
+        if (result instanceof Error) {
+          return {
+            code: DEFAULT_CODE,
+            msg: result.message,
+            data: null,
+          };
+        }
+        if (result.error) {
+          return {
+            code: result.code || DEFAULT_CODE,
+            msg: result.error === null ? "Unknown error" : result.error.message,
+            data: null,
+          };
+        }
         return {
-          code: DEFAULT_CODE,
-          msg: result,
-          data: null,
+          code: 0,
+          msg: "",
+          data: result.data,
         };
-      }
-      if (result instanceof Error) {
-        return {
-          code: DEFAULT_CODE,
-          msg: result.message,
-          data: null,
-        };
-      }
-      if (result.error) {
-        return {
-          code: result.code || DEFAULT_CODE,
-          msg: result.error === null ? "Unknown error" : result.error.message,
-          data: null,
-        };
-      }
-      return {
-        code: 0,
-        msg: "",
-        data: result.data,
-      };
-    })();
-    // @ts-ignore
-    return c.json(data);
+      })();
+      // @ts-ignore
+      return c.json(data);
+    },
   };
 }
 
