@@ -17,6 +17,7 @@ const browser_options = (() => {
     // executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     // headless: false,
     headless: true,
+    args: ["--no-sandbox"],
   };
 })();
 
