@@ -160,16 +160,9 @@ async function main() {
       return resp.s(r);
     }
     if (Number(source) === MediaRankSource.Douban) {
-      const client = new DoubanRankClient();
-      if (type === "movie") {
-        const r = await client.fetch_rank({ type });
-        return resp.s(r);
-      }
-      if (type === "tv") {
-        const r = await client.fetch_rank({ type });
-        return resp.s(r);
-      }
-      return resp.e(Result.Err("未知的 type"));
+      const client = new DoubanRankClient({ app });
+      const r = await client.fetch_rank({ type: type as "tv" | "movie" });
+      return resp.s(r);
     }
     return c.json({
       code: 101,
