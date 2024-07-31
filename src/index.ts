@@ -22,7 +22,7 @@ enum MediaRankSource {
 
 async function main() {
   const server = new Hono<{ Bindings: {}; Variables: {} }>();
-  // server.use(logger());
+  server.use(logger());
   server.use(
     "/profile/*",
     static_serve({
@@ -162,6 +162,7 @@ async function main() {
     if (Number(source) === MediaRankSource.Douban) {
       const client = new DoubanRankClient({ app });
       const r = await client.fetch_rank({ type: type as "tv" | "movie" });
+      // console.log(r.data);
       return resp.s(r);
     }
     return c.json({

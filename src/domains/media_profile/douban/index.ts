@@ -337,7 +337,7 @@ export class DoubanClient {
     // const endpoint = `https://movie.douban.com/subject/${id}/`;
     // const resp = await axios.get<string>(endpoint, {});
     // const html = resp.data;
-    fs.writeFileSync(path.resolve(__dirname, 'profile.html'), html);
+    // fs.writeFileSync(path.resolve(__dirname, 'profile.html'), html);
     const r = parse_profile_page_html(html);
     if (r.error) {
       return r;
